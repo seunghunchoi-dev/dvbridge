@@ -1,0 +1,44 @@
+THIRD-PARTY NOTICES — DMRBridge 0.1
+====================================
+
+DMRBridge itself is MIT licensed (see LICENSE). This package also contains the
+following third-party components, which keep their own licenses.
+
+
+1. Qt 6.11.3  (Qt6Core.dll, Qt6Gui.dll, Qt6Network.dll, Qt6Widgets.dll, Qt6Svg.dll and the
+   plugin DLLs in platforms\, styles\, tls\, imageformats\, iconengines\, networkinformation\, generic\)
+------------------------------------------------------------------------------------------------
+Copyright (C) The Qt Company Ltd. and other contributors.
+Used under the GNU Lesser General Public License version 3 (LICENSES\LGPL-3.0.txt,
+which supplements LICENSES\GPL-3.0.txt).
+
+- The Qt libraries are unmodified and dynamically linked. You may replace these DLLs
+  with your own compatible build of Qt 6.11.3 (or later compatible version).
+- Complete corresponding source code of Qt 6.11.3:
+    https://download.qt.io/official_releases/qt/6.11/6.11.3/single/
+  On request through the channel where you obtained DMRBridge, the distributor will also
+  provide a copy of this source code for at least three years, for no more than the cost
+  of physically performing the distribution.
+
+
+2. MinGW-w64 GCC runtime  (libgcc_s_seh-1.dll, libstdc++-6.dll)
+---------------------------------------------------------------
+Copyright (C) Free Software Foundation, Inc.
+GNU General Public License version 3 with the GCC Runtime Library Exception, version 3.1
+(LICENSES\GPL-3.0.txt, LICENSES\GCC-RUNTIME-LIBRARY-EXCEPTION.txt).
+The runtime library exception permits distributing these libraries with programs of any license.
+Source: https://gcc.gnu.org/
+
+
+3. MinGW-w64 winpthreads  (libwinpthread-1.dll)
+-----------------------------------------------
+Copyright (c) 2011 mingw-w64 project and others. See LICENSES\winpthreads.txt.
+Source: https://www.mingw-w64.org/
+
+
+No voice codec (vocoder) is included in this package. A vocoder plugin, if used, is obtained
+separately and is subject to its own license and notices.
+
+The optional voice pack (DMRBridge-voicepack-*-setup.exe: ONNX Runtime, MIT; Supertonic 3 model by
+Supertone Inc., BigScience Open RAIL-M) is distributed separately and carries its own license files
+in the voice\ folder.

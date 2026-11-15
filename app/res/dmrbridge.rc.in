@@ -1,0 +1,31 @@
+// DMRBridge 실행 파일 리소스: 아이콘(IDI_ICON1 = Qt 기본 창 아이콘) + 버전 정보
+IDI_ICON1 ICON "@ICON_PATH@"
+
+1 VERSIONINFO
+FILEVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,0,0
+PRODUCTVERSION @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,0,0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "041204b0"
+    BEGIN
+      VALUE "CompanyName", "DMRBridge"
+      VALUE "FileDescription", "DMRBridge - DMR master / DVSwitch Mobile bridge"
+      VALUE "FileVersion", "@PROJECT_VERSION@"
+      VALUE "InternalName", "DMRBridge"
+      VALUE "LegalCopyright", "Copyright (c) 2026 Choi Seunghun (6K2KZR), MIT License"
+      VALUE "OriginalFilename", "DMRBridge.exe"
+      VALUE "ProductName", "DMRBridge"
+      VALUE "ProductVersion", "@PROJECT_VERSION@"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x412, 1200
+  END
+END
