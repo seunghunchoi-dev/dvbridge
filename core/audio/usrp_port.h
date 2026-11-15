@@ -7,6 +7,9 @@
 //   제어(공개 형식 기준 자체 작성): TEXT "REG:DVSWITCH"→"REG:OK", "INFO:"→"INFO:{json}", DTMF "450"/"450#"/"#450"/"*DMR",
 //         TLV REMOTE_CMD "txTg=…" "txTs=…", PING, 수신 시작 시 SET_INFO
 //         DVBridge 클라이언트 전용(type 빅엔디안): TEXT "CLIENT:{json}" 내 정보 수신, "INFO:CALL:{json}" 상대방 정보 송신
+//   pyUC 계열(USRP Client, type 리틀엔디안): 접속 직후 TEXT "INFO:"로 정보를 요청하는 것으로 DVSwitch Mobile과 구분
+//         → INFO json·INFO:MSG를 보내고, 보내는 글자는 모두 ASCII로 (한글을 받으면 그 앱이 멈출 수 있음)
+//         자기 정보 SET_INFO(TEXT [8]…콜사인)를 받아 대시보드에 표시. DMR 말고 다른 모드 요청엔 "DMR only" 안내
 //   앱 설정 배치: 앱 "TX Port"(기본 32001) = 이 포트, 앱 "Port"(34001) = 앱이 받는 포트(첫 패킷 보낸 곳으로 자동 응답)
 //
 // 송신 안전장치: TOT 초과 → PTT 해제 + 클라이언트가 PTT를 놓을 때까지 재송신 금지 / 패킷 1초 끊김 → PTT 해제
@@ -41,7 +44,8 @@ public:
 	bool ptt() const { return ptt_; }
 	bool has_client() const { return !peer_.isNull() && peer_port_; }
 	bool type_le() const { return type_le_; }		// true = DVSwitch Mobile
-	bool type_known() const { return type_known_; }	// 음성 말고 다른 패킷(PING·REG·CLIENT 등)을 받아 바이트 순서를 앎
+	bool type_known() const { return type_known_; }
+	bool ascii_client() const { return pyuc_; }		// pyUC 계열: ASCII만 보냄	// 음성 말고 다른 패킷(PING·REG·CLIENT 등)을 받아 바이트 순서를 앎
 
 	// 클라이언트 → 본체: PTT 중 쌓인 PCM 꺼내기 (160샘플 단위)
 	bool read_frame(int16_t pcm[kSamples]);
@@ -84,6 +88,10 @@ private:
 	bool fixed_peer_ = false;
 	bool type_le_ = false;
 	bool type_known_ = false;
+	bool pyuc_ = false;			// pyUC 계열 클라이언트 (INFO: 요청을 보냄)
+	int last_req_tg_ = 0;		// 같은 채널 변경이 DTMF·원격 명령으로 겹쳐 오면 한 번만 (Unlink가 두 번 나가지 않게)
+	QElapsedTimer last_req_;
+	QElapsedTimer keepalive_;	// pyUC 계열은 서버에서 12초 넘게 아무것도 안 오면 다시 접속함 → 5초마다 PING
 	int intercom_tg_ = 0;
 	quint32 seq_ = 0;
 

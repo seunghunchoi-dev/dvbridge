@@ -41,7 +41,7 @@ void UsrpPort::on_ready_read()
 		if (d.size() < 32 || std::memcmp(d.constData(), "USRP", 4) != 0) continue;
 		if (!fixed_peer_ && (from != peer_ || fport != peer_port_)) {
 			peer_ = from; peer_port_ = fport;
-			type_le_ = type_known_ = false;		// 새 클라이언트: 바이트 순서 다시 알아냄
+			type_le_ = type_known_ = pyuc_ = false;		// 새 클라이언트: 바이트 순서·종류 다시 알아냄
 			emit log(QString("USRP: 클라이언트 %1:%2").arg(from.toString()).arg(fport));
 			emit client_changed(QString("%1:%2").arg(from.toString()).arg(fport));
 		}
@@ -79,11 +79,31 @@ static QByteArray c_str(const QByteArray &b)
 	return (z >= 0 ? b.left(z) : b).trimmed();
 }
 
+// pyUC 계열에 보낼 글자: ASCII만 (알려진 한글 이름표는 영어로, 나머지 ASCII 아닌 글자는 뺌)
+static QByteArray to_ascii(const QString &s)
+{
+	QString t = s;
+	t.replace(QString::fromUtf8("브릿지 공지 (AI 음성)"), "BRIDGE NOTICE (AI)");
+	t.replace(QString::fromUtf8("브릿지 공지"), "BRIDGE NOTICE");
+	QByteArray out;
+	for (const QChar c : t) if (c.unicode() >= 0x20 && c.unicode() < 0x7F) out.append(char(c.unicode()));
+	return out.simplified();
+}
+
 void UsrpPort::handle_control(quint32 type, const QByteArray &pl)
 {
 	if (type == T_PING) { send_raw(T_PING, false, "PING"); return; }
 	if (type == T_TEXT) {
-		if (!pl.isEmpty() && uchar(pl[0]) == kTlvSetInfo) return;	// 클라이언트 자기 정보(미사용)
+		if (!pl.isEmpty() && uchar(pl[0]) == kTlvSetInfo) {	// 클라이언트 자기 정보 [8][len][DMR ID 3][중계기 4][TG 3][TS][CC][콜사인\0] (pyUC 계열)
+			if (pl.size() >= 14) {
+				const quint32 id = (quint32(uchar(pl[2])) << 16) | (quint32(uchar(pl[3])) << 8) | uchar(pl[4]);
+				const QString call = QString::fromLatin1(c_str(pl.mid(14))).trimmed();
+				emit log(QString("USRP: 클라이언트 자기 정보 %1 (%2)").arg(call.isEmpty() ? "-" : call).arg(id));
+				QJsonObject o{{"call", call}, {"dmr_id", qint64(id)}, {"app", "USRP Client"}};
+				emit client_info(o);
+			}
+			return;
+		}
 		const QByteArray t = c_str(pl);
 		emit log("USRP: TEXT " + QString::fromLatin1(t));
 		if (t.startsWith("CLIENT:{")) {
@@ -92,23 +112,33 @@ void UsrpPort::handle_control(quint32 type, const QByteArray &pl)
 			return;
 		}
 		if (t.startsWith("REG:DVSWITCH")) { send_raw(T_TEXT, false, QByteArray("REG:OK", 7)); emit info_requested(); }
-		else if (t.startsWith("INFO:")) emit info_requested();
+		else if (t.startsWith("INFO:")) {
+			// DVSwitch Mobile은 INFO:를 요청하지 않음 → 리틀엔디안 클라이언트가 요청하면 pyUC 계열 (INFO json을 받을 수 있음)
+			if (type_le_ && !pyuc_) { pyuc_ = true; emit log("USRP: pyUC 계열 클라이언트(USRP Client) → 정보는 ASCII로 보냄"); }
+			emit info_requested();
+		}
 		return;
 	}
 	if (type == T_DTMF) {
 		const QString s = QString::fromLatin1(c_str(pl));
 		emit log("USRP: DTMF " + s);
 		// "*DMR" 등 모드 명령: 응답하지 않음. INFO JSON으로 응답하면 DVSwitch Mobile이 강제 종료됨 (2026-11-14 실기 확인)
-		if (s.startsWith('*')) return;
+		if (s.startsWith('*')) {
+			if (pyuc_ && s.compare("*DMR", Qt::CaseInsensitive) != 0) send_message("DMR only - this bridge supports DMR");
+			return;
+		}
 		apply_tg(s);
 		return;
 	}
 	if (type == T_TLV && pl.size() >= 2 && uchar(pl[0]) == kTlvRemoteCmd) {
 		const QString cmd = QString::fromLatin1(c_str(pl.mid(2, qMin(int(uchar(pl[1])), pl.size() - 2))));
 		emit log("USRP: 명령 " + cmd);
-		if (cmd.startsWith("txTg=")) apply_tg(cmd.mid(5));
+		if (cmd.startsWith("txTg=")) { if (cmd.mid(5).trimmed() != "0") apply_tg(cmd.mid(5)); }
 		else if (cmd.startsWith("tgs=") && !cmd.contains(',')) apply_tg(cmd.mid(4));
 		else if (cmd.startsWith("txTs=")) { const int ts = cmd.mid(5).toInt(); if (ts == 1 || ts == 2) emit slot_requested(ts); }
+		else if (pyuc_ && (cmd.startsWith("ambeMode=") || cmd.startsWith("ambeSize="))) {
+			if (!cmd.mid(9).startsWith("DMR", Qt::CaseInsensitive) && !cmd.startsWith("ambeSize=")) send_message("DMR only - this bridge supports DMR");
+		}
 	}
 }
 
@@ -122,11 +152,18 @@ void UsrpPort::apply_tg(QString s)
 	const int tg = s.toInt(&ok);
 	if (!ok || tg <= 0 || tg > 16777215) { emit log("USRP: TG 해석 실패 " + s); return; }
 	if (ptt_) { emit log("USRP: 송신 중이라 TG 변경 무시"); return; }
+	// pyUC는 같은 채널 변경을 DTMF와 원격 명령(tgs=)으로 두 번 보냄 → 2초 안의 같은 번호는 한 번만
+	if (tg == last_req_tg_ && last_req_.isValid() && last_req_.elapsed() < 2000) { emit log(QString("USRP: 같은 채널 변경(%1) 겹침 - 무시").arg(tg)); return; }
+	last_req_tg_ = tg; last_req_.start();
 	emit tg_requested(tg, priv);
 }
 
 void UsrpPort::on_watchdog()
 {
+	if (pyuc_ && has_client() && (!keepalive_.isValid() || keepalive_.elapsed() > 5000)) {
+		keepalive_.start();
+		send_raw(T_PING, false, "PING");
+	}
 	if (!ptt_) return;
 	if (last_rx_.isValid() && last_rx_.elapsed() > 1000) set_ptt(false, "클라이언트 패킷 1초 이상 끊김");
 	else if (ptt_clock_.elapsed() > tot_ms_) { tot_latched_ = true; set_ptt(false, "최대 송신 시간 초과 - PTT를 놓았다가 다시 눌러야 송신"); }
@@ -178,7 +215,7 @@ void UsrpPort::send_call_info(quint32 src, quint32 rptr, quint32 dst, int slot, 
 		t.append('\0');
 		return t;
 	};
-	const QByteArray t = tlv(call.trimmed().toUtf8());
+	const QByteArray t = tlv(pyuc_ ? to_ascii(call.trimmed()) : call.trimmed().toUtf8());
 	if (type_known_ || type_le_) send_raw(T_TEXT, false, t);
 	else {		// 아직 모름 (휴대폰이 음성만 보냄): 각 앱은 자기 순서의 것만 읽음. DVSwitch Mobile용(리틀엔디안)을 마지막에
 		send_raw(T_TEXT, false, t, 1);
@@ -190,7 +227,7 @@ void UsrpPort::send_info(int tg, bool priv, int ts)
 {
 	// DVSwitch Mobile(type 리틀엔디안 클라이언트)은 INFO JSON 안의 "AB"(Analog_Bridge 정보) 항목을 필수로 읽다가
 	// 없으면 강제 종료됨 (2026-11-14 logcat: NullPointerException ServerInfo$AB.toString). 형식이 공개돼 있지 않아 보내지 않음
-	if (type_le_) return;
+	if (type_le_ && !pyuc_) return;		// pyUC 계열은 tlv.ambe_mode·last_tune을 읽음 (아래 둘 다 꼭 넣음)
 	QString json = QString("INFO:{\"tlv\":{\"ambe_mode\":\"DMR\",\"ts\":%1},\"last_tune\":\"%2%3\"").arg(ts).arg(tg).arg(priv ? "#" : "");
 	if (intercom_tg_ > 0) json += QString(",\"intercom_tg\":%1").arg(intercom_tg_);	// 내부 채널 번호 (DVBridge 클라이언트 빠른 버튼)
 	json += "}";
@@ -201,8 +238,8 @@ void UsrpPort::send_info(int tg, bool priv, int ts)
 
 void UsrpPort::send_message(const QString &text)
 {
-	if (type_le_) return;	// DVSwitch Mobile: 같은 텍스트 처리 경로에서 종료될 위험 → 보내지 않음
-	QByteArray b = ("INFO:MSG:" + text).toUtf8();
+	if (type_le_ && !pyuc_) return;	// DVSwitch Mobile: 같은 텍스트 처리 경로에서 종료될 위험 → 보내지 않음
+	QByteArray b = pyuc_ ? "INFO:MSG:" + to_ascii(text) : ("INFO:MSG:" + text).toUtf8();
 	b.append('\0');
 	send_raw(T_TEXT, false, b);
 }

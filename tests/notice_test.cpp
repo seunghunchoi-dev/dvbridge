@@ -49,6 +49,8 @@ struct Client {
 	QList<QByteArray> set_info, set_info_other;	// other = 반대 바이트 순서로 온 것
 	QString order;		// 이름표가 온 순서: S = 내 순서, O = 반대 순서
 	QList<QJsonObject> calls;
+	QList<QByteArray> infos, msgs;		// INFO:{json}, INFO:MSG:글
+	bool reg_ok = false, non_ascii = false;	// non_ascii: TEXT에 ASCII 아닌 바이트가 있었음
 	void send(quint32 type, bool keyup, const QByteArray &payload, int size = 352)
 	{
 		QByteArray d(qMax(32, size), '\0');
@@ -77,12 +79,17 @@ struct Client {
 				} else if (!keyup) ++unkey;
 			} else if (type == 2) {
 				const QByteArray pl = d.mid(32);
-				if (pl.startsWith("INFO:CALL:")) calls.append(QJsonDocument::fromJson(pl.mid(10, pl.indexOf('\0') - 10)).object());
+				const bool tlv8 = !pl.isEmpty() && uchar(pl[0]) == 8;	// 이름표: 앞 14바이트는 숫자 칸, 콜사인 부분만 검사
+				for (char ch : tlv8 ? pl.mid(14) : pl) if (uchar(ch) >= 0x80) non_ascii = true;
+				if (pl.startsWith("REG:OK")) reg_ok = true;
+				else if (pl.startsWith("INFO:MSG:")) msgs.append(pl.mid(9, pl.indexOf('\0') - 9));
+				else if (pl.startsWith("INFO:{")) infos.append(pl.mid(5, pl.indexOf('\0') - 5));
+				else if (pl.startsWith("INFO:CALL:")) calls.append(QJsonDocument::fromJson(pl.mid(10, pl.indexOf('\0') - 10)).object());
 				else if (!pl.isEmpty() && uchar(pl[0]) == 8) { set_info.append(pl); order += "S"; }
 			}
 		}
 	}
-	void reset() { voice = unkey = peak = 0; set_info.clear(); set_info_other.clear(); calls.clear(); order.clear(); }
+	void reset() { voice = unkey = peak = 0; set_info.clear(); set_info_other.clear(); calls.clear(); order.clear(); infos.clear(); msgs.clear(); non_ascii = false; }
 	static QByteArray label(const QByteArray &tlv) { const QByteArray c = tlv.mid(2 + 12); return c.left(c.indexOf('\0')); }
 };
 
@@ -241,6 +248,48 @@ int main(int argc, char **argv)
 		  u.set_info_other.size() == 1 && Client::label(u.set_info_other[0]) == QByteArray("브릿지 공지") && u.order == "SO",
 		  "순서 모름 → 빅엔디안 다음 리틀엔디안 \"브릿지 공지\" 둘 다 (DVSwitch Mobile용이 마지막)");
 	CHECK(u.calls.isEmpty(), "순서 모르는 클라이언트에는 INFO:CALL 안 보냄");
+
+	// pyUC 계열 USRP Client (type 리틀엔디안, 접속 뒤 자기 정보 + INFO: 요청, 글자는 ASCII로 읽음)
+	std::printf("[2-1] pyUC 계열 USRP Client\n");
+	Client py;
+	py.le = true;
+	py.s.bind(QHostAddress::LocalHost, 0);
+	py.srv = cfg.usrp_port;
+	py.send(2, false, QByteArray("REG:DVSWITCH", 13), 32 + 13);
+	CHECK(wait_until([&] { py.drain(); return py.reg_ok; }, 2000), "REG:DVSWITCH → REG:OK (리틀엔디안)");
+	{
+		QByteArray si;		// [8][len][DMR ID 3][중계기 4][TG 3][TS][CC][콜사인\0]
+		const QByteArray call = "HL0PYU";
+		si.append(char(8)); si.append(char(3 + 4 + 3 + 1 + 1 + call.size() + 1));
+		const quint32 id = 4500002;
+		si.append(char(id >> 16)); si.append(char(id >> 8)); si.append(char(id));
+		si.append(QByteArray(4 + 3 + 1 + 1, '\0')); si.append(call); si.append('\0');
+		py.send(2, false, si, 32 + si.size());
+	}
+	py.send(2, false, QByteArray("INFO:", 6), 32 + 6);
+	CHECK(wait_until([&] { py.drain(); return !py.infos.isEmpty(); }, 2000), "INFO: 요청 → INFO json 보냄 (DVSwitch Mobile에는 안 보냄)");
+	{
+		const QJsonObject o = py.infos.isEmpty() ? QJsonObject() : QJsonDocument::fromJson(py.infos.last()).object();
+		CHECK(o["tlv"].toObject()["ambe_mode"].toString() == "DMR" && o.contains("last_tune"), "INFO json에 tlv.ambe_mode·last_tune");
+	}
+	CHECK(s.client_info().call == "HL0PYU" && s.client_info().dmr_id == 4500002, "자기 정보 SET_INFO → 클라이언트 콜사인·DMR ID 표시");
+	py.reset();
+	s.notice_add("공지 제목", "tts", tone(0.5));
+	CHECK(wait_until([&] { py.drain(); return py.unkey > 0; }, 4000), "pyUC에도 공지 전달");
+	CHECK(py.set_info.size() == 1 && Client::label(py.set_info[0]) == QByteArray("BRIDGE NOTICE") && !py.non_ascii, "pyUC 이름표는 ASCII \"BRIDGE NOTICE\" (한글 없음)");
+	py.reset();
+	py.send(1, false, QByteArray("*YSF", 5), 32 + 5);
+	CHECK(wait_until([&] { py.drain(); return !py.msgs.isEmpty(); }, 2000) && py.msgs.last().startsWith("DMR only") && !py.non_ascii, "DMR 말고 다른 모드 요청 → INFO:MSG \"DMR only\"");
+	int tg_changes = 0;
+	QObject::connect(&s, &Session::target_changed, [&](int, bool) { ++tg_changes; });
+	py.send(1, false, QByteArray("91", 3), 32 + 3);		// pyUC는 DTMF와 원격 명령 tgs=를 함께 보냄
+	{
+		QByteArray tl; const QByteArray cmd = "tgs=91"; tl.append(char(5)); tl.append(char(cmd.size())); tl.append(cmd);
+		py.send(4, false, tl, 32 + tl.size());
+	}
+	pump(400); py.drain();
+	CHECK(tg_changes == 1, "같은 채널 변경(DTMF 91 + tgs=91)은 한 번만 처리");
+	CHECK(!py.non_ascii && !py.msgs.isEmpty() && py.msgs.last().startsWith("TG 91"), "채널 변경 안내도 ASCII");
 	s.stop();
 
 	std::printf("[2-2] 내부 채널 (BM으로 안 나감)\n");
