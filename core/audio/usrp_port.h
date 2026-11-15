@@ -40,6 +40,7 @@ public:
 	void set_fixed_peer(const QHostAddress &a, quint16 p) { peer_ = a; peer_port_ = p; fixed_peer_ = true; }
 	void set_tot_seconds(int s) { tot_ms_ = qMax(1, s) * 1000; }
 	void set_intercom_tg(int tg) { intercom_tg_ = tg; }	// INFO json에 알려 줄 내부 채널 번호 (0 = 없음)
+	void set_echo_tg(int tg) { echo_tg_ = tg; }			// INFO json에 알려 줄 내부 에코 번호 (0 = 없음)
 	quint16 local_port() const { return local_port_; }
 	bool ptt() const { return ptt_; }
 	bool has_client() const { return !peer_.isNull() && peer_port_; }
@@ -93,6 +94,7 @@ private:
 	QElapsedTimer last_req_;
 	QElapsedTimer keepalive_;	// pyUC 계열은 서버에서 12초 넘게 아무것도 안 오면 다시 접속함 → 5초마다 PING
 	int intercom_tg_ = 0;
+	int echo_tg_ = 0;
 	quint32 seq_ = 0;
 
 	QQueue<int16_t> rxq_;

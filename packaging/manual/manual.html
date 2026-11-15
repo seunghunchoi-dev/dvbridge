@@ -47,7 +47,7 @@ DVBridge는 아마추어 무선국 허가를 받은 분이 쓰는 프로그램�
 <li><a href="#prep">준비물</a></li><li><a href="#install">설치하기</a></li><li><a href="#first">처음 실행하기</a></li>
 <li><a href="#password">관리자 비밀번호 정하기</a></li><li><a href="#user">사용자 추가하기</a></li><li><a href="#service">서비스 켜기</a></li>
 <li><a href="#phone">휴대폰(DVSwitch Mobile) 설정</a></li><li><a href="#echo">에코 시험과 TG 바꾸기</a></li><li><a href="#dash">대시보드 보기</a></li>
-<li><a href="#web">웹 설정 둘러보기</a></li><li><a href="#notice">브릿지 공지 (음성 안내)</a></li><li><a href="#intercom">내부 채널</a></li><li><a href="#outside">밖에서(LTE·5G) 쓰기와 네트워크 점검</a></li><li><a href="#auto">자동 실행·트레이·와치독</a></li>
+<li><a href="#web">웹 설정 둘러보기</a></li><li><a href="#notice">브릿지 공지 (음성 안내)</a></li><li><a href="#intercom">내부 채널과 내부 시험 기능</a></li><li><a href="#outside">밖에서(LTE·5G) 쓰기와 네트워크 점검</a></li><li><a href="#auto">자동 실행·트레이·와치독</a></li>
 <li><a href="#backup">백업·업데이트·제거</a></li><li><a href="#trouble">문제가 생겼을 때</a></li></ol></div>
 
 <h2 id="prep">1. 준비물</h2>
@@ -137,7 +137,7 @@ DVBridge는 아마추어 무선국 허가를 받은 분이 쓰는 프로그램�
 <tr><td>슬롯·컬러 코드·TOT·옵션</td><td>보통 바꾸지 않아도 됩니다</td><td>2 · 1 · 180초 · (빈 칸)</td></tr>
 </table>
 <p><b>저장</b>을 누르면 목록에 나타납니다. 여러 명을 쓰려면 같은 방법으로 더 추가합니다.</p>
-<figure><img src="img/web_users.png" alt="사용자 목록"><figcaption>사용자 3명 예시 — 같은 콜사인 HL0EXM을 접미사 01·02로 두 대 쓰고, HL0XYZ가 한 대를 씁니다.</figcaption></figure>
+<figure><img src="img/web_users.png" alt="사용자 목록"><figcaption>사용자 3명 예시 — 같은 콜사인 HL0EXM을 접미사 01·02로 두 대 쓰고, HL0XYZ가 한 대를 씁니다. [🔊 시험]을 누르면 그 휴대폰에만 시험 소리가 갑니다 (12장).</figcaption></figure>
 
 <h2 id="service">6. 서비스 켜기</h2>
 <p>DVBridge 창의 초록 <b>[서비스 켜기]</b>를 누르면 (또는 웹 설정 맨 위 [서비스 켜기]) BrandMeister에 접속합니다. 아래 표의 <b>BM 접속</b>이 초록 "접속됨"이 되면 성공입니다.</p>
@@ -174,11 +174,13 @@ DVBridge는 아마추어 무선국 허가를 받은 분이 쓰는 프로그램�
 <li>아래 <b>PTT</b>를 누른 채 3~5초 말하고 뗍니다.</li>
 <li>2~3초 뒤 내 목소리가 그대로 돌아오면 성공입니다.</li>
 </ol>
+<div class="tip"><b>BM 없이 먼저 점검하기 (내부 에코)</b><kbd>9</kbd><kbd>9</kbd><kbd>9</kbd><kbd>9</kbd><kbd>#</kbd>을 누르고 말하면 BM으로 보내지 않고 DVBridge가 바로 내 목소리를 되돌려 들려줍니다. 휴대폰 마이크·스피커와 DVBridge 연결이 잘 되는지 BM 차단 걱정 없이 확인할 수 있습니다 (12장).</div>
 <div class="note"><b>BrandMeister 차단 방지</b>BrandMeister는 <b>60초 안에 2초 미만 송신을 6번</b> 하면 1시간 동안 차단합니다. DVBridge는 5번까지만 허용하고 6번째는 막아 줍니다. PTT를 짧게 여러 번 누르지 마세요.</div>
 <h3>TG 바꾸기</h3>
-<p>휴대폰에서 번호 뒤에 <kbd>#</kbd>을 붙여 <b>Send</b>하면 바뀝니다 (예: <kbd>450#</kbd> 한국, <kbd>91#</kbd> 전세계). 바꾸기 전에 이전 TG 연결은 자동으로 끊습니다(4000 Unlink).</p>
+<p>휴대폰에서 번호 뒤에 <kbd>#</kbd>을 붙여 <b>Send</b>하면 바뀝니다 (예: <kbd>450#</kbd> 한국, <kbd>91#</kbd> 전세계). 바꾸기 전에 이전 TG 연결은 자동으로 끊습니다(4000 Unlink). 최근 15분 안에 소리가 들어온 TG도 함께 끊습니다.</p>
+<p><b>지금 채널만 듣기</b>(기본 켬): BM은 전에 말했던 TG나 SelfCare에 고정한 TG의 소리를 계속 보내 줍니다. DVBridge는 지금 고른 채널의 소리만 휴대폰으로 보내고 나머지는 거릅니다. 내 ID로 오는 개인호출, 공지, 내부 채널, 에코는 항상 들립니다. 웹 설정 TG 바꾸기 칸 아래에서 끌 수 있습니다.</p>
 <p><b>웹 설정에서도</b> 사용자마다 TG를 바꿀 수 있습니다. 번호를 넣고 <b>바꾸기</b>를 누르거나, 자주 쓰는 TG 버튼을 누르세요. "기본값으로도 저장"을 켜면 다음에 서비스를 켤 때도 그 TG로 시작합니다.</p>
-<figure><img src="img/web_service_tg.png" alt="TG 바꾸기"><figcaption>사용자별 지금 TG, BM 접속 상태, 휴대폰이 어디서 붙었는지(내부망/외부망)가 함께 보입니다.</figcaption></figure>
+<figure><img src="img/web_service_tg.png" alt="TG 바꾸기"><figcaption>사용자별 지금 TG, BM 접속 상태, 휴대폰이 어디서 붙었는지(내부망/외부망)가 함께 보입니다. 아래쪽에 내부 채널·내부 에코 번호와 "지금 채널만 듣기"가 있습니다.</figcaption></figure>
 
 <h2 id="dash">9. 대시보드 보기</h2>
 <p>DVBridge 창의 <b>[대시보드 열기]</b> (또는 휴대폰 브라우저에서 <code>http://PC주소:8080</code>). 로그인 없이 누구나 볼 수 있습니다.</p>
@@ -225,7 +227,8 @@ DVBridge는 아마추어 무선국 허가를 받은 분이 쓰는 프로그램�
 </ol>
 <div class="note"><b>AI 음성 모델 사용 제한</b>음성 팩의 Supertonic 3 모델(Supertone Inc., Open RAIL-M 라이선스)은 법령 위반, 남을 해치려는 거짓 정보, 명예 훼손·괴롭힘, 다른 사람 사칭, 차별, 의료 조언 등에 쓸 수 없고, 만든 소리가 기계로 만든 것임을 알려야 합니다(그래서 화면에 "AI 음성"으로 표시). 음성 팩을 다른 사람에게 줄 때는 사용 제한과 라이선스 파일을 함께 전해 주세요. 자세한 내용은 음성 팩의 README.</div>
 
-<h2 id="intercom">12. 내부 채널 (BM으로 안 나가는 이 브릿지 안의 채널)</h2>
+<h2 id="intercom">12. 내부 채널과 내부 시험 기능 (BM으로 안 나감)</h2>
+<h3>내부 채널</h3>
 <p>같은 DVBridge에 붙은 휴대폰끼리만 이야기할 수 있는 채널입니다. <b>BM으로는 아무것도 나가지 않습니다.</b></p>
 <ol class="steps">
 <li>휴대폰 DVSwitch Mobile에서 <kbd>99#</kbd>을 누르면 내부 채널로 들어갑니다. (웹 설정의 TG 바꾸기 칸에서 <b>99 내부 채널</b> 버튼을 눌러도 됩니다)</li>
@@ -237,6 +240,16 @@ DVBridge는 아마추어 무선국 허가를 받은 분이 쓰는 프로그램�
 <li>BM 짧은 송신 제한(60초 안 6번)과 상관없습니다. 듣는 사람에게 BM 통화가 들어오면 BM이 먼저입니다.</li>
 <li>대시보드 이력에는 <b>내부</b>로 남습니다.</li>
 </ul>
+
+<h3 id="selftest">내부 시험 기능</h3>
+<p>BM에 아무것도 보내지 않고 휴대폰과 DVBridge가 잘 되는지 확인하는 기능입니다. BM 짧은 송신 제한(60초 안 6번)에도 걸리지 않습니다.</p>
+<table>
+<tr><th>기능</th><th>쓰는 법</th><th>확인할 수 있는 것</th></tr>
+<tr><td><b>내부 에코</b></td><td>휴대폰에서 <kbd>9999#</kbd> → PTT를 누르고 말한 뒤 뗌</td><td>잠시 뒤 내 목소리가 그대로 돌아옵니다(화면 이름표 "에코 시험"). 마이크·스피커·연결 점검. 0.5초보다 짧게 말하면 돌려주지 않습니다. BM으로 돌아갈 때는 TG 번호#.</td></tr>
+<tr><td><b>시험 소리 보내기</b></td><td>웹 설정 → 사용자 목록의 <b>[🔊 시험]</b></td><td>그 사용자의 휴대폰에만 딩동과 시험 안내 음성이 갑니다. 휴대폰 화면 이름표와 소리를 확인합니다.</td></tr>
+<tr><td><b>시험 모드</b></td><td>웹 설정 → 사용자 편집 → <b>시험 모드</b>에 체크 → 저장</td><td>그 사용자는 BM에 접속하지 않습니다. 어떤 TG로 말해도 에코로 되돌아오고, 채널 바꾸기·송신이 BM으로 나가지 않습니다. 처음 쓰시는 분의 연습용. 사용자 목록에 "시험 모드"로 표시됩니다. 실제로 쓰려면 체크를 끄고 저장하세요.</td></tr>
+</table>
+<p>내부 에코 번호는 웹 설정 → TG 바꾸기 → <b>내부 에코 번호</b>에서 바꿀 수 있습니다 (0이면 끔). 대시보드 이력에는 <b>에코</b>로 남습니다.</p>
 
 <h2 id="outside">13. 밖에서(LTE·5G) 쓰기와 네트워크 점검</h2>
 <p>웹 설정의 <b>네트워크 점검</b>에서 <b>[점검하기]</b>를 누르면 이 PC가 밖에서 접속할 수 있는 상태인지, 무엇을 해야 하는지 알려 줍니다. <b>[공인 IP도 확인]</b>은 외부 서비스에 이 PC의 공인 IP를 물어봅니다.</p>
@@ -276,6 +289,8 @@ DVBridge는 아마추어 무선국 허가를 받은 분이 쓰는 프로그램�
 <tr><td>휴대폰 Status가 Registered가 안 됨</td><td>Hostname(PC 주소)과 TX Port(USRP 포트)가 맞는지, 같은 와이파이인지, 서비스가 켜져 있는지. Windows 방화벽 허용 창이 떴다면 "허용".</td></tr>
 <tr><td>연결은 되는데 소리가 안 남</td><td>보코더 플러그인이 있는지 (웹 설정 → 보코더). DVBridge에는 보코더가 들어 있지 않습니다.</td></tr>
 <tr><td>에코가 안 돌아옴</td><td>450997#처럼 # 을 붙였는지, 대상이 "(개인)"으로 바뀌었는지. 9990이 응답하지 않으면 450997을 써 보세요.</td></tr>
+<tr><td>채널을 바꿨는데 예전 TG 소리가 들림</td><td>웹 설정 TG 바꾸기 칸 아래 "지금 채널만 듣기"가 켜져 있는지 확인하세요. 그래도 들리면 휴대폰에서 <kbd>4000#</kbd>(Unlink)을 누르세요.</td></tr>
+<tr><td>소리·연결이 되는지 BM 없이 확인하고 싶음</td><td>휴대폰에서 <kbd>9999#</kbd> 내부 에코, 또는 웹 설정 사용자 목록의 [🔊 시험] (12장)</td></tr>
 <tr><td>짧은 송신이 막힘</td><td>BrandMeister 차단 방지 기능입니다. 1분 정도 기다렸다가 2초 이상 말하세요.</td></tr>
 <tr><td>웹 화면이 안 열림</td><td>DVBridge 창의 노란 안내를 확인하고, 웹 접속 주소의 포트를 다른 번호로 바꾼 뒤 [적용].</td></tr>
 <tr><td>관리자 비밀번호를 잊음</td><td>DVBridge를 종료한 뒤 <code>data\dvbridge.ini</code>에서 <code>admin_salt</code>, <code>admin_hash</code> 두 줄을 지우고 다시 실행하면 새로 정할 수 있습니다.</td></tr>

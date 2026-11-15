@@ -69,10 +69,15 @@ button.big{font-size:17px;padding:10px 22px}button.onair{background:var(--tx);bo
   <div id="tgs"></div>
   <label class="chk" style="margin-top:8px"><input type="checkbox" id="tgSave"> 기본값으로도 저장 (다음에 서비스를 켤 때 이 TG로 시작)</label>
   <div class="msg" id="tgMsg"></div>
-  <div class="nsec"><h3>내부 채널 (BM으로 안 나감)</h3>
+  <div class="nsec"><h3>내부 채널·내부 에코 (BM으로 안 나감)</h3>
    <p class="mut" style="margin:0 0 6px">휴대폰에서 이 번호와 #을 누르면(예: 99#) 내부 채널로 들어갑니다. 내부 채널에서 말하면 BM으로는 나가지 않고, 이 브릿지에서 같은 내부 채널에 있는 사용자에게만 들립니다. BM으로 돌아갈 때는 TG 번호#(예: 450#).</p>
-   <div class="row" style="margin-top:0"><label class="who2">내부 채널 번호 <input type="number" id="icTg" style="width:110px;margin:0" min="0"></label><button onclick="icSave()">저장</button><span class="mut" style="font-size:12px">0이면 끔. 실제 BM TG와 겹치지 않는 번호를 쓰세요 (그 번호의 BM TG에는 갈 수 없게 됨)</span></div>
-   <div class="msg" id="icMsg"></div></div></div>
+   <div class="row" style="margin-top:0"><label class="who2">내부 채널 번호 <input type="number" id="icTg" style="width:110px;margin:0" min="0"></label><label class="who2">내부 에코 번호 <input type="number" id="ecTg" style="width:110px;margin:0" min="0"></label><button onclick="icSave()">저장</button></div>
+   <p class="mut" style="margin:4px 0 0;font-size:12px">내부 에코: 휴대폰에서 이 번호와 #을 누르고(예: 9999#) 말하면, BM으로 보내지 않고 DVBridge가 바로 내 목소리를 되돌려 들려줍니다 (마이크·스피커·연결 점검). 0이면 끔. 두 번호 모두 실제 BM TG와 겹치지 않는 번호를 쓰세요 (그 번호의 BM TG에는 갈 수 없게 됨)</p>
+   <div class="msg" id="icMsg"></div></div>
+  <div class="nsec"><h3>지금 채널만 듣기</h3>
+   <label class="chk"><input type="checkbox" id="rxOnly" onchange="rxSave()"> 지금 채널과 다른 그룹 TG 소리는 휴대폰으로 보내지 않음 (권장)</label>
+   <p class="mut" style="margin:4px 0 0;font-size:12px">BM은 전에 말했던 TG나 SelfCare에 고정한 TG의 소리를 계속 보내 줍니다. 켜 두면 지금 고른 채널 소리만 들립니다. 내 ID로 오는 개인호출, 공지, 내부 채널, 에코는 항상 들립니다. 채널을 바꾸면 예전 TG 연결도 자동으로 끊습니다(Unlink).</p>
+   <div class="msg" id="rxMsg"></div></div></div>
  <div class="card" id="noticeCard"><h2>브릿지 공지 (휴대폰에 음성 안내)</h2>
   <p class="mut" style="margin:0 0 6px">BM으로는 나가지 않고, 이 브릿지에 접속한 휴대폰에만 들립니다. BM 통화 중이면 끝난 뒤에 나갑니다. 휴대폰 화면에는 <b>브릿지 공지</b>로 표시됩니다.</p>
   <div><span class="mut">받을 사용자:</span> <span id="ntWho"></span></div>
@@ -128,6 +133,7 @@ button.big{font-size:17px;padding:10px 22px}button.onair{background:var(--tx);bo
    <label class="chk"><input type="checkbox" id="f_enabled"> 이 사용자 사용</label>
    <label class="chk"><input type="checkbox" id="f_priv"> 개인호출 (9990·450997 Parrot)</label>
    <label class="chk"><input type="checkbox" id="f_auto_unlink"> TG 바꾸기 전 4000(Unlink) 자동</label>
+   <label class="chk" title="BM에 접속하지 않습니다. 말하면 내 목소리가 되돌아오고, 송신·채널 변경은 BM으로 나가지 않습니다 (연습·점검용)"><input type="checkbox" id="f_test_mode"> 시험 모드 — BM에 접속하지 않고, 말하면 에코로 되돌아옴 (연습용)</label>
   </div>
   <datalist id="masters"><option value="4501.master.brandmeister.network"><option value="4502.master.brandmeister.network"></datalist>
   <div class="row"><button class="pri" onclick="saveUser()">저장</button><button onclick="hide('editor')">취소</button></div><div class="msg" id="edMsg"></div></div>
@@ -181,21 +187,22 @@ async function login(){const r=await api('/api/admin/login',{password:$('lp').va
 async function logout(){await api('/api/admin/logout',{});init();}
 async function load(){
  const r=await api('/api/admin/config');if(!r.ok)return;cfg=r.data;
- if(cfg.intercom_tg!==icTg){icTg=cfg.intercom_tg;QUICK=icTg?QUICK0.concat([{tg:icTg,l:icTg+' 내부 채널'}]):QUICK0;tgCount=-1;if(document.activeElement!==$('icTg'))$('icTg').value=icTg;}
+ if(document.activeElement!==$('rxOnly'))$('rxOnly').checked=cfg.rx_target_only!==false;
+ if(cfg.intercom_tg!==icTg||cfg.echo_tg!==ecTg){icTg=cfg.intercom_tg;ecTg=cfg.echo_tg;QUICK=QUICK0.concat(icTg?[{tg:icTg,l:icTg+' 내부 채널'}]:[],ecTg?[{tg:ecTg,l:ecTg+' 내부 에코'}]:[]);tgCount=-1;if(document.activeElement!==$('icTg'))$('icTg').value=icTg;if(document.activeElement!==$('ecTg'))$('ecTg').value=ecTg;}
  renderTg();renderNotice();
  if(cfg.netcheck&&!cfg.netcheck.running&&!$('nc').innerHTML)showNet();
  $('runState').innerHTML=cfg.service_on?'<b style="color:var(--ok)">● 서비스 켜짐</b>':'<b class="mut">○ 서비스 꺼짐</b>';
  $('voc').innerHTML=(cfg.vocoders||[]).length?'사용 중: '+cfg.vocoders.map(esc).join(', '):'<b style="color:var(--tx)">보코더 플러그인이 없습니다</b> — 음성이 나오지 않습니다. DVBridge에는 보코더가 들어 있지 않으니, AMBE+2 보코더 플러그인(vocoder_*.dll)을 직접 구해(라이선스·특허 조건은 각자 확인) 아래 폴더에 넣고 DVBridge를 다시 시작하세요.<br><code>'+esc(cfg.plugin_dir)+'</code>';
  $('ids').textContent=(cfg.iddb_count?cfg.iddb_count.toLocaleString()+'명 ('+cfg.iddb_date+' 받음)':'명단 없음')+(cfg.iddb_status?' — '+cfg.iddb_status:'');
  $('idBtn').disabled=!!cfg.iddb_busy;if(cfg.iddb_busy)setTimeout(load,1500);
- $('users').innerHTML=(cfg.users||[]).length?cfg.users.map((u,i)=>'<tr><td>'+(u.enabled?'✔':'')+'</td><td><b>'+esc(u.callsign)+'</b></td><td>'+esc(u.hotspot_id)+'</td><td>'+esc(u.host)+':'+esc(u.port)+'</td><td>'+esc(u.usrp_port)+'</td><td>'+(u.priv?esc(u.tg)+' <span class="tag">개인</span>':'TG '+esc(u.tg))+'</td><td>'+(u.password_set?'<span class="tag">저장됨</span>':'<span class="tag" style="color:var(--tx)">없음</span>')+'</td><td><button class="sm" onclick="edit('+i+')">편집</button> <button class="sm danger" onclick="del('+i+')">삭제</button></td></tr>').join(''):'<tr><td colspan="8" class="mut">사용자가 없습니다 — [+ 사용자 추가]</td></tr>';
+ $('users').innerHTML=(cfg.users||[]).length?cfg.users.map((u,i)=>'<tr><td>'+(u.enabled?'✔':'')+'</td><td><b>'+esc(u.callsign)+'</b>'+(u.test_mode?' <span class="tag" style="color:var(--acc)">시험 모드</span>':'')+'</td><td>'+esc(u.hotspot_id)+'</td><td>'+esc(u.host)+':'+esc(u.port)+'</td><td>'+esc(u.usrp_port)+'</td><td>'+(u.priv?esc(u.tg)+' <span class="tag">개인</span>':'TG '+esc(u.tg))+'</td><td>'+(u.password_set?'<span class="tag">저장됨</span>':'<span class="tag" style="color:var(--tx)">없음</span>')+'</td><td><button class="sm" onclick="testSound('+i+')" title="이 사용자의 휴대폰에만 시험 소리를 보냅니다 (BM과 무관)">🔊 시험</button> <button class="sm" onclick="edit('+i+')">편집</button> <button class="sm danger" onclick="del('+i+')">삭제</button></td></tr>').join(''):'<tr><td colspan="8" class="mut">사용자가 없습니다 — [+ 사용자 추가]</td></tr>';
 }
 // ---- 사용자별 TG ----
 const QUICK0=[{tg:450,l:'450 한국'},{tg:91,l:'91 전세계'},{tg:9990,l:'9990 에코',p:true},{tg:450997,l:'450997 에코',p:true},{tg:4000,l:'4000 끊기'}];
 let QUICK=QUICK0;
 function who(u){return esc(u.callsign)+(u.suffix?'·'+String(u.suffix).padStart(2,'0'):'')}
-let tgCount=-1,icTg=null;
-async function icSave(){const r=await api('/api/admin/action',{action:'intercom_save',tg:Number($('icTg').value||0)});msg('icMsg',r.data.message||(r.ok?'저장했습니다':'실패'),r.ok);load();}
+let tgCount=-1,icTg=null,ecTg=null;
+async function icSave(){const r=await api('/api/admin/action',{action:'intercom_save',tg:Number($('icTg').value||0),echo_tg:Number($('ecTg').value||0)});msg('icMsg',r.data.message||(r.ok?'저장했습니다':'실패'),r.ok);load();}
 function renderTg(){
  const us=cfg.users||[];
  if(us.length!==tgCount){
@@ -205,7 +212,7 @@ function renderTg(){
    '<button class="pri sm" onclick="setTg('+i+')">바꾸기</button>'+QUICK.map(q=>'<button class="qb" onclick="quickTg('+i+','+q.tg+','+(q.p?1:0)+')">'+q.l+'</button>').join('')+'</div>').join(''):'<span class="mut">사용자가 없습니다</span>';
  }
  us.forEach((u,i)=>{const e=$('tgNow'+i);if(!e)return;
-  e.innerHTML='지금: <b>'+(u.live_tg===cfg.intercom_tg&&cfg.intercom_tg?'내부 채널 '+esc(u.live_tg):u.live_priv?esc(u.live_tg)+' (개인)':'TG '+esc(u.live_tg))+'</b> · '+(u.running?(u.connected?'<span style="color:var(--ok)">접속됨</span>':'<span style="color:var(--acc)">접속 중…</span>'):'<span class="mut">꺼짐</span>')+(u.client?' · 휴대폰'+netTag(u.client_net):'');});
+  e.innerHTML='지금: <b>'+(u.live_tg===cfg.intercom_tg&&cfg.intercom_tg?'내부 채널 '+esc(u.live_tg):u.live_tg===cfg.echo_tg&&cfg.echo_tg?'내부 에코 '+esc(u.live_tg):u.live_priv?esc(u.live_tg)+' (개인)':'TG '+esc(u.live_tg))+'</b> · '+(u.running?(u.test_mode?'<span style="color:var(--acc)">시험 모드 (BM 안 씀)</span>':u.connected?'<span style="color:var(--ok)">접속됨</span>':'<span style="color:var(--acc)">접속 중…</span>'):'<span class="mut">꺼짐</span>')+(u.client?' · 휴대폰'+netTag(u.client_net):'');});
 }
 // ---- 브릿지 공지 ----
 const DAYS=['월','화','수','목','금','토','일'];
@@ -385,8 +392,10 @@ async function getIds(){const r=await api('/api/admin/action',{action:'download_
 function restore(inp){const f=inp.files[0];inp.value='';if(!f)return;if(f.size>60000)return msg('bMsg','설정 백업 파일이 아닙니다 (너무 큼)');
  if(!confirm(f.name+' 으로 설정을 되돌릴까요?\n서비스는 꺼지고, 지금 설정은 자동으로 보관됩니다.'))return;
  const rd=new FileReader();rd.onload=async()=>{const r=await api('/api/admin/action',{action:'restore',ini:rd.result});msg('bMsg',r.data.message||(r.ok?'복원했습니다':'실패'),r.ok);load();};rd.readAsText(f);}
+async function rxSave(){const r=await api('/api/admin/action',{action:'rx_filter_save',on:$('rxOnly').checked});msg('rxMsg',r.data.message||(r.ok?'저장했습니다':'실패'),r.ok);}
+async function testSound(i){const r=await api('/api/admin/action',{action:'test_sound',index:i});msg('topMsg',r.data.message||(r.ok?'보냈습니다':'실패'),r.ok);}
 let editing=-1;
-const F=['host','port','callsign','dmr_id','suffix','tg','slot','cc','usrp_port','tot_seconds','options'],B=['enabled','priv','auto_unlink'];
+const F=['host','port','callsign','dmr_id','suffix','tg','slot','cc','usrp_port','tot_seconds','options'],B=['enabled','priv','auto_unlink','test_mode'];
 function edit(i){
  editing=i;const d=cfg.defaults||{};const u=i>=0?cfg.users[i]:Object.assign({},d,{usrp_port:cfg.next_usrp_port||d.usrp_port});
  F.forEach(k=>$('f_'+k).value=(k==='dmr_id'&&!u[k])?'':(u[k]??''));B.forEach(k=>$('f_'+k).checked=!!u[k]);	// 새 사용자의 DMR ID는 빈 칸

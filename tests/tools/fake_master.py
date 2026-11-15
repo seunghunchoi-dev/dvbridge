@@ -33,6 +33,8 @@ while time.time() < end:
         d, a = s.recvfrom(1024)
     except socket.timeout:
         continue
+    except ConnectionResetError:    # Windows: 이미 닫힌 클라이언트로 보낸 뒤 오는 ICMP 오류 → 무시
+        continue
     if d.startswith(b"RPTL"):
         stats["rptl"] += 1; state[a] = "auth"; log("RPTL", d[4:8].hex())
         s.sendto(b"RPTACK" + salt, a)

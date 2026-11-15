@@ -205,6 +205,7 @@ static void read_user(QSettings &s, SessionConfig &c)
 	c.slot = s.value("slot", 2).toInt();
 	c.cc = s.value("cc", 1).toInt();
 	c.auto_unlink = s.value("auto_unlink", true).toBool();
+	c.test_mode = s.value("test_mode", false).toBool();
 	c.usrp_port = quint16(s.value("usrp_port", 32001).toUInt());
 	c.tot_seconds = s.value("tot_seconds", 180).toInt();
 	c.device = s.value("device").toString();
@@ -226,6 +227,7 @@ static void write_user(QSettings &s, const SessionConfig &c)
 	s.setValue("slot", c.slot);
 	s.setValue("cc", c.cc);
 	s.setValue("auto_unlink", c.auto_unlink);
+	if (c.test_mode) s.setValue("test_mode", true); else s.remove("test_mode");
 	s.setValue("usrp_port", c.usrp_port);
 	s.setValue("tot_seconds", c.tot_seconds);
 	if (c.device.isEmpty()) s.remove("device"); else s.setValue("device", c.device);
@@ -243,6 +245,8 @@ AppConfig load()
 	a.plugin_dir = s.value("vocoder/plugins").toString();
 	a.admin_salt = s.value("web/admin_salt").toString();
 	a.intercom_tg = s.value("intercom/tg", 99).toInt();
+	a.echo_tg = s.value("echo/tg", 9999).toInt();
+	a.rx_target_only = s.value("rx/target_only", true).toBool();
 	a.notice = QJsonDocument::fromJson(s.value("notice/json").toString().toUtf8()).object();
 	a.admin_hash = s.value("web/admin_hash").toString();
 	const int n = s.beginReadArray("users");
@@ -289,6 +293,8 @@ void save(const AppConfig &a)
 	s.setValue("vocoder/plugins", a.plugin_dir);
 	s.setValue("web/admin_salt", a.admin_salt);
 	s.setValue("intercom/tg", a.intercom_tg);
+	s.setValue("echo/tg", a.echo_tg);
+	s.setValue("rx/target_only", a.rx_target_only);
 	s.setValue("notice/json", QString::fromUtf8(QJsonDocument(a.notice).toJson(QJsonDocument::Compact)));
 	s.setValue("web/admin_hash", a.admin_hash);
 	s.remove("users");
@@ -319,6 +325,7 @@ QJsonObject user_to_json(const SessionConfig &c)
 	o["slot"] = c.slot;
 	o["cc"] = c.cc;
 	o["auto_unlink"] = c.auto_unlink;
+	o["test_mode"] = c.test_mode;
 	o["usrp_port"] = int(c.usrp_port);
 	o["tot_seconds"] = c.tot_seconds;
 	o["device"] = c.device;		// 보기 전용 (클라이언트가 알려 준 장비명)
@@ -356,6 +363,7 @@ bool user_from_json(const QJsonObject &o, SessionConfig &c, QString *err)
 	c.slot = slot;
 	c.cc = cc;
 	c.auto_unlink = o["auto_unlink"].toBool(true);
+	c.test_mode = o["test_mode"].toBool(false);
 	c.usrp_port = quint16(usrp);
 	c.tot_seconds = tot;
 	c.name = call;

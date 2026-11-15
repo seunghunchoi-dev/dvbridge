@@ -338,6 +338,52 @@ int main(int argc, char **argv)
 		CHECK(cb.voice == 0, "BM 채널로 돌아간 B는 내부 채널 소리를 안 받음");
 		a.stop(); b.stop(); x.stop();
 	}
+	std::printf("[2-3] 내부 에코·시험 모드 (BM으로 안 나감)\n");
+	{
+		auto mk = [&](const char *call, quint32 hs, quint16 port, bool test) {
+			SessionConfig k = cfg;
+			k.name = call; k.master.callsign = call; k.master.id = hs; k.usrp_port = port; k.echo_tg = 9999; k.test_mode = test;
+			return k;
+		};
+		auto speak = [&](Client &c, int frames) {
+			for (int i = 0; i < frames; ++i) {
+				QByteArray f(320, '\0');
+				for (int k = 0; k < 160; ++k) qToLittleEndian<qint16>(qint16(5000 * std::sin(2 * M_PI * 600 * (i * 160 + k) / 8000.0)), f.data() + k * 2);
+				c.send(0, true, f); pump(20);
+			}
+			c.send(0, false, QByteArray());
+		};
+		// 내부 에코: 9999#로 들어가 말하면 되돌려 들려줌
+		Session e(mk("HL0ECO", 450000021, 32981, false));
+		e.start();
+		Client ce; ce.s.bind(QHostAddress::LocalHost, 0); ce.srv = 32981; ce.hello(); pump(300); ce.drain(); ce.reset();
+		CHECK(e.set_target(9999, false, "시험").isEmpty() && e.on_echo() && !e.config().priv, "9999 → 내부 에코");
+		QList<CallRecord> recs;
+		QObject::connect(&e, &Session::call_finished, [&](CallRecord r) { recs.append(r); });
+		speak(ce, 50);	// 1초
+		CHECK(wait_until([&] { ce.drain(); return ce.unkey > 0 && ce.voice >= 45; }, 6000), "1초 말함 → 내 목소리를 되돌려 들려줌");
+		CHECK(ce.set_info.size() >= 1 && Client::label(ce.set_info[0]) == QByteArray("에코 시험"), "화면 이름표 \"에코 시험\"");
+		CHECK(ce.calls.size() >= 1 && ce.calls[0]["echo"].toBool() && ce.calls[0]["source"] == "echo", "INFO:CALL echo=true");
+		CHECK(ce.peak > 4000, "되돌아온 소리 크기 그대로");
+		CHECK(e.tx_count() == 0 && e.short_tx_in_window() == 0, "BM 송신 0번 (짧은 송신 집계에도 안 들어감)");
+		CHECK(recs.size() >= 2 && recs[0].kind == "echo" && recs[0].tx && recs.last().kind == "echo" && !recs.last().tx, "이력: 에코 녹음(송신) + 에코 들려줌(수신)");
+		ce.reset();
+		speak(ce, 10);	// 0.2초 - 너무 짧음
+		pump(2500); ce.drain();
+		CHECK(ce.voice == 0, "0.5초보다 짧으면 되돌려 주지 않음");
+		e.stop();
+		// 시험 모드: BM에 접속하지 않고, 어떤 TG로 말해도 에코
+		Session t(mk("HL0TST", 450000022, 32982, true));
+		CHECK(t.start(), "시험 모드 세션 시작");
+		pump(1500);
+		CHECK(!t.master()->connected() && t.master_state_text().startsWith(QString::fromUtf8("시험 모드")), "시험 모드: BM에 접속하지 않음");
+		Client ct; ct.s.bind(QHostAddress::LocalHost, 0); ct.srv = 32982; ct.hello(); pump(300); ct.drain(); ct.reset();
+		CHECK(t.set_target(450, false, "시험").isEmpty() && t.config().tg == 450, "시험 모드에서도 채널 바꾸기 (BM으로는 안 나감)");
+		speak(ct, 50);
+		CHECK(wait_until([&] { ct.drain(); return ct.unkey > 0 && ct.voice >= 45; }, 6000), "TG 450에서 말해도 에코로 되돌아옴");
+		CHECK(t.tx_count() == 0, "시험 모드: BM 송신 0번");
+		t.stop();
+	}
 	{
 		QVector<int16_t> t = tone(0.3), back; QString err;
 		CHECK(NoticeService::parse_wav(NoticeService::make_wav(t), back, &err) && back == t, "미리 듣기 WAV 만들기·읽기 왕복 동일");

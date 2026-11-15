@@ -74,7 +74,7 @@ function loadTheme(){try{const t=localStorage.getItem('dvbridge-theme');return T
 function cycleTheme(){const t=THEMES[(THEMES.indexOf(loadTheme())+1)%3];try{localStorage.setItem('dvbridge-theme',t)}catch(e){}applyTheme(t);}
 applyTheme(loadTheme());
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function dst(r){if(r.kind==='notice')return '휴대폰';if(r.kind==='intercom')return '내부 채널 '+esc(r.dst);return r.priv?esc(r.dst)+'<span class="tag">개인</span>':'TG '+esc(r.dst)}
+function dst(r){if(r.kind==='notice')return '휴대폰';if(r.kind==='intercom')return '내부 채널 '+esc(r.dst);if(r.kind==='echo')return '내부 에코';return r.priv?esc(r.dst)+'<span class="tag">개인</span>':'TG '+esc(r.dst)}
 function src(r){if(r.kind==='notice')return '<b>📢 브릿지 공지</b>'+(r.name?' '+esc(r.name):'');if(!r.call)return esc(r.src);return '<b>'+esc(r.call)+'</b>'+(r.name?' ['+esc(r.name)+']':'')+' <span class="mut">('+esc(r.src)+')</span>'}
 function t(ms){const d=new Date(ms);return d.toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('ko-KR',{hour12:false})}
 function dur(ms){return (ms/1000).toFixed(1)+'초'}
@@ -132,7 +132,7 @@ function render(){
   const dc=u.connected?'on':(u.master_state?'wait':'');
   let now='<span class="mut">대기</span>',cls='';
   if(u.active){const r=u.active;cls=r.dir==='TX'?'tx':'rx';
-   now='<span class="now '+cls+'">'+(r.kind==='notice'?'공지 ':r.kind==='intercom'?'내부 ':r.dir==='TX'?(r.kind==='unlink'?'Unlink ':'송신 '):'수신 ')+'</span>'+src(r)+' → '+dst(r)+' <span class="mut">'+dur(r.dur)+'</span>';}
+   now='<span class="now '+cls+'">'+(r.kind==='notice'?'공지 ':r.kind==='intercom'?'내부 ':r.kind==='echo'?'에코 ':r.dir==='TX'?(r.kind==='unlink'?'Unlink ':'송신 '):'수신 ')+'</span>'+src(r)+' → '+dst(r)+' <span class="mut">'+dur(r.dur)+'</span>';}
   else if(!u.enabled)now='<span class="mut">사용 안 함</span>';
   else if(!u.master_state)now='<span class="mut">정지</span>';
   else if(!u.connected)now='<span class="mut">'+esc(u.master_state)+'</span>';
@@ -160,7 +160,7 @@ function renderTiles(us){
   const k=who(u),cls=u.connected?'on':(u.master_state?'wait':'');
   let act='<span class="mut">대기 중</span>',ac='';
   if(u.active){const r=u.active;ac=r.dir==='TX'?'tx':'rx';
-   act='<b>'+(r.kind==='notice'?'공지':r.kind==='intercom'?'내부':r.dir==='TX'?(r.kind==='unlink'?'Unlink':'송신'):'수신')+'</b> '+src(r)+'<br>→ '+dst(r)+' <span class="mut">'+dur(r.dur)+'</span>';}
+   act='<b>'+(r.kind==='notice'?'공지':r.kind==='intercom'?'내부':r.kind==='echo'?'에코':r.dir==='TX'?(r.kind==='unlink'?'Unlink':'송신'):'수신')+'</b> '+src(r)+'<br>→ '+dst(r)+' <span class="mut">'+dur(r.dur)+'</span>';}
   else{const lh=hist.find(r=>r.via===k);if(lh)act='<span class="mut">마지막: '+(lh.dir==='TX'?'송신':'수신')+' '+(lh.call?esc(lh.call):esc(lh.src))+' → '+(lh.priv?esc(lh.dst):'TG '+esc(lh.dst))+' · '+ago(lh.start)+'</span>';}
   const state=!u.enabled?'사용 안 함':!u.master_state?'정지':esc(u.master_state);
   return '<div class="tile '+cls+'"><div class="hd"><span class="nm">'+k+'</span><span class="tg">'+dst({dst:u.target,priv:u.target_priv})+' · TS'+esc(u.slot)+'</span></div>'+
@@ -176,7 +176,7 @@ async function tick(){
   last=await (await fetch('/api/status',{cache:'no-store'})).json();render();
   const h=await (await fetch('/api/history',{cache:'no-store'})).json();
   hist=h;
-  $('rows').innerHTML=h.length?h.map(r=>'<tr class="'+(r.kind==='unlink'?'unlink':'')+'"><td>'+t(r.start)+'</td><td>'+esc(r.via||'')+'</td><td><span class="dir '+r.dir+'">'+r.dir+'</span>'+(r.kind==='unlink'?'<span class="tag">Unlink</span>':r.kind==='notice'?'<span class="tag">공지</span>':r.kind==='intercom'?'<span class="tag">내부</span>':'')+'</td><td>'+src(r)+'</td><td>'+dst(r)+'</td><td>TS'+esc(r.slot)+'</td><td>'+dur(r.dur)+'</td></tr>').join(''):'<tr><td colspan="7">이력 없음</td></tr>';
+  $('rows').innerHTML=h.length?h.map(r=>'<tr class="'+(r.kind==='unlink'?'unlink':'')+'"><td>'+t(r.start)+'</td><td>'+esc(r.via||'')+'</td><td><span class="dir '+r.dir+'">'+r.dir+'</span>'+(r.kind==='unlink'?'<span class="tag">Unlink</span>':r.kind==='notice'?'<span class="tag">공지</span>':r.kind==='intercom'?'<span class="tag">내부</span>':r.kind==='echo'?'<span class="tag">에코</span>':'')+'</td><td>'+src(r)+'</td><td>'+dst(r)+'</td><td>TS'+esc(r.slot)+'</td><td>'+dur(r.dur)+'</td></tr>').join(''):'<tr><td colspan="7">이력 없음</td></tr>';
  }catch(e){$('users').innerHTML='<tr><td colspan="6">DVBridge에 연결할 수 없음</td></tr>';}
 }
 tick();setInterval(tick,1000);

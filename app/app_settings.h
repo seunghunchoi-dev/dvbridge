@@ -23,6 +23,8 @@ struct AppConfig {
 	QString plugin_dir;			// 비우면 실행파일 옆 plugins
 	QString admin_salt, admin_hash;
 	int intercom_tg = 99;			// 내부 채널 번호 (0 = 끔) - BM으로 나가지 않는 이 브릿지 안의 채널
+	bool rx_target_only = true;		// 지금 채널만 듣기 (다른 그룹 TG 수신은 휴대폰으로 안 보냄)
+	int echo_tg = 9999;				// 내부 에코 번호 (0 = 끔) - 말하면 DVBridge가 바로 되돌려 들려줌 (BM 안 거침)
 	QJsonObject notice;				// 브릿지 공지 설정 (목소리·빠르기·알림음·예약 목록) - notice_service.h	// 웹 설정 관리자 비밀번호 (PBKDF2-SHA256, Base64). 비면 미설정
 	QString effective_plugin_dir() const;
 };

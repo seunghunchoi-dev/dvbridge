@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 	QFile::remove(mlog);
 
 	QProcess master;
-	master.start("python", {"-I", master_py, "40", "62071", "local", mlog});
+	master.start("python", {"-I", master_py, "60", "62071", "local", mlog});
 	CHECK(master.waitForStarted(5000), "가짜 마스터 실행");
 	pump(800);
 
@@ -225,6 +225,32 @@ int main(int argc, char **argv)
 		s2.stop();
 	}
 
+	std::printf("G) 지금 채널만 듣기 + 채널 바꿀 때 자동 Unlink\n");
+	{
+		SessionConfig c4 = c;
+		c4.usrp_port = 32074; c4.dmr_id = 4500003; c4.master.id = 450000397; c4.tg = 450; c4.priv = false;	// 짧은 송신 집계(E)와 다른 ID
+		Session s4(c4);
+		QStringList logs;
+		QObject::connect(&s4, &Session::log, [&](QString l) { logs << l; });
+		CHECK(s4.start(), "세 번째 세션 시작");
+		CHECK(wait_until([&] { return s4.master()->connected(); }, 5000), "마스터 접속");
+		Client c5; c5.s.bind(QHostAddress::LocalHost, 0); c5.srv = 32074;
+		c5.talk(2500);		// TG 450 그룹 송신 → 가짜 마스터가 1초 뒤 같은 450 그룹으로 되돌려 보냄
+		CHECK(wait_until([&] { return s4.tx_count() == 1; }, 3000), "TG 450 그룹 송신");
+		bool txing = true;
+		QObject::connect(&s4, &Session::tx_state, [&](bool on, int, bool) { txing = on; });
+		wait_until([&] { return !txing; }, 3000);	// 송신이 끝난 직후 (되돌림은 1초 뒤에 옴)
+		c5.drain(); c5.voice = 0;
+		CHECK(s4.set_target(9990, true, "시험").isEmpty(), "9990 개인호출로 바꿈");
+		CHECK(s4.unlinking() || s4.unlink_count() == 1, "450에서 바꿀 때 자동 Unlink");
+		pump(4500); c5.drain();
+		CHECK(c5.voice == 0, "되돌아온 TG 450 그룹 소리는 휴대폰으로 안 보냄 (지금 채널 9990)");
+		CHECK(logs.join("\n").contains(QString::fromUtf8("수신 거름: TG 450")), "기록: 수신 거름 TG 450");
+		CHECK(wait_until([&] { return !s4.unlinking(); }, 5000) && s4.unlink_count() == 1, "자동 Unlink 한 번만 (4000 되돌림은 구독으로 안 봄)");
+		CHECK(s4.set_target(91, false, "시험").isEmpty() && s4.unlink_count() == 1, "그 뒤 91로 바꿀 때는 Unlink 다시 안 함");
+		s4.stop();
+	}
+
 	std::printf("D) 마스터 미접속이면 송신 안 함\n");
 	s.master()->stop();
 	pump(2300);
@@ -234,7 +260,8 @@ int main(int argc, char **argv)
 	CHECK(s.tx_count() == t0, "미접속 상태 PTT 무시");
 
 	s.stop();
-	master.waitForFinished(45000);
+	master.waitForFinished(65000);
+	{ const QByteArray e = master.readAllStandardError(); if (!e.isEmpty()) std::printf("fake_master stderr: %s\n", e.constData()); }
 	std::printf(g_fail ? "\nRESULT: FAIL\n" : "\nRESULT: PASS\n");
 	return g_fail ? 1 : 0;
 }

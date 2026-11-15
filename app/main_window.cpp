@@ -8,6 +8,7 @@
 #include "web/dashboard_server.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <QAction>
 #include <QApplication>
@@ -285,7 +286,11 @@ void MainWindow::build_ui()
 	setCentralWidget(central);
 	resize(820, 720);
 
+	// 키보드 초점을 받지 않게: 다른 창에 글을 쓰다 Enter·스페이스가 이 창으로 오면 서비스가 꺼지는 일이 있었음
+	service_btn_->setFocusPolicy(Qt::NoFocus);
+	quit->setFocusPolicy(Qt::NoFocus);
 	connect(service_btn_, &QPushButton::clicked, this, [this] {
+		append_log(service_on_ ? "(창 버튼) 서비스 끄기" : "(창 버튼) 서비스 켜기");
 		QString err;
 		if (!set_service(!service_on_, &err) && !err.isEmpty()) QMessageBox::warning(this, "DVBridge", err);
 	});
@@ -319,6 +324,7 @@ void MainWindow::build_tray()
 	menu->addAction("대시보드 열기", this, [this] { QDesktopServices::openUrl(QUrl(local_url())); });
 	menu->addSeparator();
 	tray_service_ = menu->addAction("서비스 켜기", this, [this] {
+		append_log(service_on_ ? "(트레이 메뉴) 서비스 끄기" : "(트레이 메뉴) 서비스 켜기");
 		QString err;
 		if (!set_service(!service_on_, &err) && !err.isEmpty()) tray_->showMessage("DVBridge", err, QSystemTrayIcon::Warning);
 	});
@@ -576,6 +582,8 @@ void MainWindow::start_user(int i)
 	c.name = c.master.callsign + (sfx ? QString("·%1").arg(sfx, 2, 10, QChar('0')) : QString());
 	c.plugin_dir = app_.effective_plugin_dir();
 	c.intercom_tg = app_.intercom_tg;
+	c.echo_tg = app_.echo_tg;
+	c.rx_target_only = app_.rx_target_only;
 	row.session = std::make_unique<Session>(c);
 	Session *s = row.session.get();
 	const QString tag = "[" + c.master.callsign + "·" + (sfx ? QString("%1").arg(sfx, 2, 10, QChar('0')) : QString::number(c.master.id)) + "] ";
@@ -783,6 +791,8 @@ QJsonObject MainWindow::web_config() const
 	o["iddb_status"] = id_status_;
 	o["version"] = DVBRIDGE_VERSION;
 	o["intercom_tg"] = app_.intercom_tg;
+	o["echo_tg"] = app_.echo_tg;
+	o["rx_target_only"] = app_.rx_target_only;
 	if (netcheck_) o["netcheck"] = netcheck_->result();
 	QJsonObject n = NoticeService::sanitize(app_.notice, nullptr);
 	if (n.isEmpty()) n = NoticeService::sanitize(QJsonObject(), nullptr);
@@ -796,16 +806,51 @@ QJsonObject MainWindow::web_action(const QString &action, const QJsonObject &bod
 {
 	auto result = [](bool ok, const QString &m) { return QJsonObject{{"ok", ok}, {"message", m}}; };
 	if (action.startsWith("notice_")) return notice_action(action, body);
-	if (action == "intercom_save") {		// 내부 채널 번호 (0 = 끔)
+	if (action == "intercom_save") {		// 내부 채널·내부 에코 번호 (0 = 끔)
 		const int tg = body["tg"].toInt(-1);
-		const bool parrot = tg == 9990 || (tg >= 100997 && tg <= 999997 && tg % 1000 == 997);
-		if (tg < 0 || tg > 999999) return result(false, "번호를 확인하세요 (0이면 끔)");
-		if (tg == 4000 || parrot) return result(false, "4000(Unlink)·에코(Parrot) 번호는 내부 채널로 쓸 수 없습니다");
+		const int echo = body.contains("echo_tg") ? body["echo_tg"].toInt(-1) : app_.echo_tg;
+		auto reserved = [](int n) { return n == 4000 || n == 9990 || (n >= 100997 && n <= 999997 && n % 1000 == 997); };
+		if (tg < 0 || tg > 999999 || echo < 0 || echo > 999999) return result(false, "번호를 확인하세요 (0이면 끔)");
+		if (reserved(tg) || reserved(echo)) return result(false, "4000(Unlink)·BM 에코(9990, 450997 등) 번호는 쓸 수 없습니다");
+		if (tg && tg == echo) return result(false, "내부 채널과 내부 에코는 다른 번호여야 합니다");
 		app_.intercom_tg = tg;
+		app_.echo_tg = echo;
 		AppSettings::save(app_);
-		for (Row &r : rows_) if (r.session) r.session->set_intercom_tg(tg);
-		append_log(tg ? QString("(웹 설정) 내부 채널 번호: %1").arg(tg) : QString("(웹 설정) 내부 채널 끔"));
-		return result(true, tg ? QString("내부 채널을 %1번으로 정했습니다. 휴대폰에서 %1# 을 누르면 들어갑니다").arg(tg) : QString("내부 채널을 껐습니다"));
+		for (Row &r : rows_) if (r.session) { r.session->set_intercom_tg(tg); r.session->set_echo_tg(echo); }
+		append_log(QString("(웹 설정) 내부 채널 %1 · 내부 에코 %2").arg(tg ? QString::number(tg) : QString("끔"), echo ? QString::number(echo) : QString("끔")));
+		QStringList m;
+		m << (tg ? QString("내부 채널 %1#").arg(tg) : QString("내부 채널 끔"));
+		m << (echo ? QString("내부 에코 %1#").arg(echo) : QString("내부 에코 끔"));
+		return result(true, "저장했습니다: " + m.join(", "));
+	}
+	if (action == "rx_filter_save") {	// 지금 채널만 듣기 켜기/끄기
+		app_.rx_target_only = body["on"].toBool(true);
+		AppSettings::save(app_);
+		for (Row &r : rows_) if (r.session) r.session->set_rx_target_only(app_.rx_target_only);
+		append_log(QString("(웹 설정) 지금 채널만 듣기: %1").arg(app_.rx_target_only ? "켬" : "끔"));
+		return result(true, app_.rx_target_only ? "지금 채널만 듣습니다 (다른 TG 소리는 휴대폰으로 보내지 않음)" : "BM이 보내 주는 모든 TG 소리를 휴대폰으로 보냅니다");
+	}
+	if (action == "test_sound") {		// 그 사용자의 휴대폰에만 시험 소리 (화면 이름표 + 소리 확인, BM과 무관)
+		const int i = body["index"].toInt(-1);
+		if (i < 0 || i >= app_.users.size()) return result(false, "없는 사용자입니다");
+		Row &r = rows_[size_t(i)];
+		if (!r.session) return result(false, "이 사용자가 켜져 있지 않습니다. 서비스를 켜세요");
+		if (r.session->client_address().isEmpty()) return result(false, "이 사용자에게 연결된 휴대폰이 없습니다");
+		const QString hid = QString::number(app_.users[i].master.id);
+		append_log("(웹 설정) 시험 소리: " + app_.users[i].master.callsign);
+		if (notice_->tts_available()) {
+			NoticeService::Job j;
+			j.text = QStringLiteral("디브이브릿지 시험 소리입니다. 화면과 소리가 잘 나오면 정상입니다.");
+			j.source = "test";
+			j.targets = QStringList{hid};
+			j.chime = true;
+			notice_->speak(j);
+			return result(true, "시험 소리를 만들고 있습니다. 곧 그 휴대폰에서 딩동 소리와 안내가 나옵니다");
+		}
+		QVector<int16_t> beep(8000);		// 이 PC에 음성 합성 목소리가 없으면 딩동 + 1초 삐 소리
+		for (int k = 0; k < beep.size(); ++k) beep[k] = int16_t(4000 * std::sin(2 * 3.14159265358979 * 1000 * k / 8000.0));
+		notice_dispatch(NoticeService::build(beep, true, 1), QStringLiteral("시험 소리"), "test", QStringList{hid});
+		return result(true, "시험 소리(딩동 + 삐)를 보냈습니다");
 	}
 	if (action == "save_user") {
 		const int i = body["index"].toInt(-1);
@@ -886,6 +931,7 @@ QJsonObject MainWindow::web_action(const QString &action, const QJsonObject &bod
 		return result(true, "점검을 시작했습니다");
 	}
 	if (action == "stop_all") {
+		append_log("(웹 설정) 서비스 끄기");
 		set_service(false);
 		return result(true, "서비스를 껐습니다");
 	}

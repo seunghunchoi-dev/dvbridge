@@ -85,6 +85,7 @@ static QByteArray to_ascii(const QString &s)
 	QString t = s;
 	t.replace(QString::fromUtf8("브릿지 공지 (AI 음성)"), "BRIDGE NOTICE (AI)");
 	t.replace(QString::fromUtf8("브릿지 공지"), "BRIDGE NOTICE");
+	t.replace(QString::fromUtf8("에코 시험"), "ECHO TEST");
 	QByteArray out;
 	for (const QChar c : t) if (c.unicode() >= 0x20 && c.unicode() < 0x7F) out.append(char(c.unicode()));
 	return out.simplified();
@@ -239,6 +240,7 @@ void UsrpPort::send_info(int tg, bool priv, int ts)
 	if (type_le_ && !pyuc_) return;		// pyUC 계열은 tlv.ambe_mode·last_tune을 읽음 (아래 둘 다 꼭 넣음)
 	QString json = QString("INFO:{\"tlv\":{\"ambe_mode\":\"DMR\",\"ts\":%1},\"last_tune\":\"%2%3\"").arg(ts).arg(tg).arg(priv ? "#" : "");
 	if (intercom_tg_ > 0) json += QString(",\"intercom_tg\":%1").arg(intercom_tg_);	// 내부 채널 번호 (DVBridge 클라이언트 빠른 버튼)
+	if (echo_tg_ > 0) json += QString(",\"echo_tg\":%1").arg(echo_tg_);			// 내부 에코 번호
 	json += "}";
 	QByteArray b = json.toLatin1();
 	b.append('\0');

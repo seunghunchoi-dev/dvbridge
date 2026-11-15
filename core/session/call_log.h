@@ -16,7 +16,7 @@ struct CallRecord {
 	quint32 src = 0, dst = 0;
 	bool priv = false;
 	int slot = 2;
-	QString kind = "voice";		// "voice", "unlink", "notice"(브릿지 공지), "intercom"(내부 채널) - 둘 다 BM과 무관
+	QString kind = "voice";		// "voice", "unlink", "notice"(브릿지 공지), "intercom"(내부 채널), "echo"(내부 에코) - BM과 무관
 	QString src_call;			// 알면 콜사인 (내 송신은 내 콜사인)
 	QString src_name;			// 알면 이름 (RadioID 명단)
 	QString via;				// 이 기록을 남긴 사용자 브릿지 (다중 사용자, 보통 그 사용자의 콜사인)

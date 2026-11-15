@@ -10,6 +10,7 @@
 //   - TOT·패킷 끊김은 UsrpPort가 처리
 #pragma once
 #include <QElapsedTimer>
+#include <QSet>
 #include <QJsonObject>
 #include <QObject>
 #include <QVector>
@@ -46,6 +47,13 @@ struct SessionConfig {
 	int device_relogin_min_s = 600;
 	// 내부 채널: 이 번호로 말하면 BM으로 보내지 않고 같은 번호를 고른 이 브릿지의 다른 사용자에게만 들림 (0 = 끔)
 	int intercom_tg = 99;
+	// 내부 에코: 이 번호로 말하면 BM으로 보내지 않고 DVBridge가 바로 되돌려 들려줌 (0 = 끔)
+	int echo_tg = 9999;
+	// 시험 모드: BM에 접속하지 않음. 송신·채널 변경도 BM으로 안 나가고, 말하면 에코로 되돌아옴 (연습·점검용)
+	bool test_mode = false;
+	// 지금 채널만 듣기: 지금 대상과 다른 그룹 TG 수신(예전 동적 연결·고정 TG)은 휴대폰으로 보내지 않음.
+	//   내 ID로 오는 개인호출·공지·내부 채널·에코는 항상 통과
+	bool rx_target_only = true;
 };
 
 // DVBridge 클라이언트가 보낸 내 정보 (표시용 - 서버 설정을 덮어쓰지 않음)
@@ -102,6 +110,11 @@ public:
 	// ---- 내부 채널 (BM과 무관) ----
 	bool on_intercom() const { return cfg_.intercom_tg > 0 && cfg_.tg == cfg_.intercom_tg; }
 	void set_intercom_tg(int tg);
+	// ---- 내부 에코·시험 모드 (BM과 무관) ----
+	bool on_echo() const { return cfg_.echo_tg > 0 && cfg_.tg == cfg_.echo_tg; }
+	void set_echo_tg(int tg);
+	bool test_mode() const { return cfg_.test_mode; }
+	void set_rx_target_only(bool on) { cfg_.rx_target_only = on; }
 	// 다른 사용자가 내부 채널로 말한 소리를 이 사용자의 휴대폰으로 (공지와 같은 대기·BM 우선 규칙). key = 말하는 사람 구분
 	void intercom_feed(const QString &key, quint32 src_id, const QString &call, const QString &name, const QVector<int16_t> &pcm8k, bool end);
 
@@ -147,6 +160,16 @@ private:
 	std::vector<dmr::Dmrd> unlink_q_;
 	size_t unlink_pos_ = 0;
 	bool unlinking_ = false;
+	// 채널을 바꿀 때 예전 그룹 구독을 비우기 위한 기록
+	int heard_tg_ = 0;				// 최근 들어온 그룹 TG (BM이 보내 준다 = 구독돼 있음)
+	QElapsedTimer heard_clock_;
+	int unlinked_heard_ = 0;		// 자동 Unlink로 비운 TG (Unlink 끝나고 5초 넘어서도 오면 고정 TG)
+	QElapsedTimer unlink_done_;		// 마지막 Unlink가 끝난 때
+	QSet<int> static_tgs_;			// Unlink로 빠지지 않는 TG (SelfCare 고정) → 자동 Unlink 안 함
+	QList<qint64> auto_unlinks_;	// 자동 Unlink 시각 (1분에 3번까지)
+	quint32 filtered_stream_ = 0;	// 거른 수신 (기록은 한 번만)
+	quint32 seen_stream_ = 0;
+	void unlink_before_change(int tg, bool priv, const QString &what);
 	int linked_tg_ = 0;				// 이번 접속에서 마지막으로 송신한 그룹 TG (동적 연결이 걸려 있을 수 있음)
 	int unlink_count_ = 0;
 	// 이력
@@ -190,6 +213,9 @@ private:
 	void notice_begin();
 	bool ic_tx_ = false;			// 이 사용자가 내부 채널로 말하는 중 (BM으로 안 보냄)
 	void finish_intercom_tx(const QString &why);
+	bool ec_tx_ = false;			// 내부 에코·시험 모드: 휴대폰 소리를 모으는 중 (끝나면 되돌려 들려줌)
+	QVector<int16_t> echo_buf_;
+	void finish_echo_tx(const QString &why);
 	void notice_pause(const QString &why);
 	void notice_finish(const QString &why);
 };

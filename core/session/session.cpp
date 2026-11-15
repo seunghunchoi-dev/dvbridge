@@ -40,6 +40,13 @@ Session::Session(const SessionConfig &cfg, QObject *parent) : QObject(parent), c
 
 Session::~Session() { stop(); }
 
+void Session::set_echo_tg(int tg)
+{
+	cfg_.echo_tg = tg;
+	usrp_->set_echo_tg(tg);
+	usrp_->send_info(cfg_.tg, cfg_.priv, cfg_.slot);
+}
+
 void Session::set_intercom_tg(int tg)
 {
 	cfg_.intercom_tg = tg;
@@ -55,12 +62,21 @@ QString Session::set_target(int tg, bool priv, const QString &source)
 	if (!source.isEmpty() && ic_tx_) return "송신 중에는 바꿀 수 없습니다. 송신이 끝난 뒤 다시 하세요";
 	const QString from = source.isEmpty() ? QString() : " (" + source + ")";
 	if (cfg_.intercom_tg > 0 && tg == cfg_.intercom_tg) {		// 내부 채널: BM으로는 아무것도 보내지 않음
-		if (cfg_.auto_unlink && linked_tg_) request_unlink(QString("TG %1 연결 해제 후 내부 채널").arg(linked_tg_));
+		unlink_before_change(tg, false, "내부 채널");
 		cfg_.tg = tg; cfg_.priv = false;
 		emit log(QString("대상 변경 → 내부 채널 %1 (BM으로 나가지 않음)%2").arg(tg).arg(from));
 		emit target_changed(tg, false);
 		usrp_->send_info(cfg_.tg, cfg_.priv, cfg_.slot);
 		usrp_->send_message(QString("Intercom %1 (bridge only)").arg(tg));
+		return QString();
+	}
+	if (cfg_.echo_tg > 0 && tg == cfg_.echo_tg) {		// 내부 에코: BM으로는 아무것도 보내지 않음
+		unlink_before_change(tg, false, "내부 에코");
+		cfg_.tg = tg; cfg_.priv = false;
+		emit log(QString("대상 변경 → 내부 에코 %1 (BM으로 나가지 않음, 말하면 되돌려 들려줌)%2").arg(tg).arg(from));
+		emit target_changed(tg, false);
+		usrp_->send_info(cfg_.tg, cfg_.priv, cfg_.slot);
+		usrp_->send_message(QString("Echo test %1 (bridge only)").arg(tg));
 		return QString();
 	}
 	// BM Parrot(9990, 국가코드+997 예: 450997)은 개인호출로만 응답 → '#' 없이 보내도 개인호출로 처리
@@ -70,7 +86,7 @@ QString Session::set_target(int tg, bool priv, const QString &source)
 		request_unlink("수동 (4000)" + from);
 		return QString();
 	}
-	if (cfg_.auto_unlink && linked_tg_ && (tg != linked_tg_ || priv)) request_unlink(QString("TG %1 연결 해제 후 변경").arg(linked_tg_));
+	unlink_before_change(tg, priv, "변경");
 	cfg_.tg = tg; cfg_.priv = priv;
 	emit log(QString("대상 변경 → %1%2%3").arg(tg).arg(priv ? " (개인호출)" : "").arg(from));
 	emit target_changed(tg, priv);
@@ -87,7 +103,9 @@ bool Session::start()
 	voc_->load(cfg_.plugin_dir);
 	for (const QString &l : voc_->log()) emit log("[보코더] " + l);
 	if (!voc_->has_codec(VP_CODEC_AMBE2_FEC)) emit log("[보코더] DMR 코덱 없음 - 송신은 무음, 수신은 소리 없음");
-	hb_->start(cfg_.master);
+	usrp_->set_echo_tg(cfg_.echo_tg);
+	if (cfg_.test_mode) emit log("시험 모드: BM에 접속하지 않습니다. 말하면 에코로 되돌아오고, 채널 변경·송신은 BM으로 나가지 않습니다");
+	else hb_->start(cfg_.master);
 	rx_watch_->start(200);
 	return true;
 }
@@ -96,6 +114,7 @@ void Session::stop()
 {
 	if (tx_.active()) finish_tx("세션 종료");
 	if (ic_tx_) finish_intercom_tx("세션 종료");
+	if (ec_tx_) finish_echo_tx("세션 종료");
 	if (hb_) hb_->stop();
 	if (tx_timer_) tx_timer_->stop();
 	if (rx_watch_) rx_watch_->stop();
@@ -127,6 +146,21 @@ void Session::on_ptt(bool keyed)
 		fill_names(tx_rec_);
 		emit call_started(tx_rec_);
 		emit log(QString("내부 채널 %1 송신 시작 (BM으로 안 나감)").arg(cfg_.tg));
+		emit tx_state(true, cfg_.tg, false);
+		tx_timer_->start(20);
+		return;
+	}
+	if ((on_echo() || cfg_.test_mode) && !unlinking_) {	// 내부 에코·시험 모드: 소리를 모았다가 되돌려 들려줌 (BM으로 안 나감)
+		ec_tx_ = true;
+		echo_buf_.clear();
+		tx_started_.start();
+		tx_rec_ = CallRecord();
+		tx_rec_.start_ms = QDateTime::currentMSecsSinceEpoch();
+		tx_rec_.tx = true; tx_rec_.src = cfg_.dmr_id; tx_rec_.dst = quint32(cfg_.tg); tx_rec_.priv = false;
+		tx_rec_.slot = cfg_.slot; tx_rec_.kind = "echo"; tx_rec_.src_call = cfg_.master.callsign;
+		fill_names(tx_rec_);
+		emit call_started(tx_rec_);
+		emit log(QString("%1 녹음 시작 (BM으로 안 나감)").arg(cfg_.test_mode ? "시험 모드 에코" : "내부 에코"));
 		emit tx_state(true, cfg_.tg, false);
 		tx_timer_->start(20);
 		return;
@@ -175,6 +209,17 @@ void Session::on_ptt(bool keyed)
 
 void Session::on_tx_tick()
 {
+	if (ec_tx_) {		// 내부 에코: 소리를 모음 (최대 60초)
+		int16_t pcm[160];
+		int n = 0;
+		while (n < 3 && usrp_->read_frame(pcm)) {
+			if (echo_buf_.size() < 8000 * 60) echo_buf_ += QVector<int16_t>(pcm, pcm + 160);
+			emit audio(QByteArray(reinterpret_cast<const char *>(pcm), int(sizeof(pcm))), true);
+			++n;
+		}
+		if (!usrp_->ptt() && usrp_->queued_frames() == 0) finish_echo_tx("PTT 해제");
+		return;
+	}
 	if (ic_tx_) {		// 내부 채널: 휴대폰 소리를 그대로 같은 채널 사용자에게 (보코더·BM 없음)
 		int16_t pcm[160];
 		QVector<int16_t> out;
@@ -233,6 +278,46 @@ void Session::finish_intercom_tx(const QString &why)
 	emit tx_state(false, cfg_.tg, false);
 }
 
+void Session::finish_echo_tx(const QString &why)
+{
+	ec_tx_ = false;
+	tx_timer_->stop();
+	tx_rec_.duration_ms = tx_started_.elapsed();
+	emit call_finished(tx_rec_);
+	emit tx_state(false, cfg_.tg, false);
+	const double sec = echo_buf_.size() / 8000.0;
+	emit log(QString("에코 녹음 끝 (%1, %2초) → 되돌려 들려줌").arg(why).arg(sec, 0, 'f', 1));
+	if (echo_buf_.size() < 8000 / 2) { emit log("에코: 0.5초보다 짧아 들려주지 않음"); echo_buf_.clear(); return; }
+	NoticeClip c;
+	c.queued.start();
+	c.title = QStringLiteral("에코 시험");
+	c.source = "echo";
+	c.pcm = echo_buf_;
+	echo_buf_.clear();
+	notice_q_.append(c);
+	notice_idle_.start();		// 0.5초쯤 쉬었다가 (통화 끝 직후 쉼 규칙과 같이 처리)
+	if (!notice_timer_->isActive()) notice_timer_->start(20);
+}
+
+// 대상을 바꾸기 전에 예전 그룹 구독을 비움 (BM은 동적 그룹을 약 15분 동안 계속 보내 줌)
+//   - 이번 접속에서 내가 송신한 그룹(linked_tg_), 또는 최근 15분 안에 들어온 그룹(heard_tg_, 재시작 뒤에도 알 수 있음)
+//   - 고정(Static) TG는 Unlink로 안 빠지므로 한 번 확인되면 다시 보내지 않음, 자동 Unlink는 1분에 3번까지 (짧은 송신 제한과 별개로 BM 부담 줄임)
+void Session::unlink_before_change(int tg, bool priv, const QString &what)
+{
+	if (!cfg_.auto_unlink || cfg_.test_mode) return;
+	int sub = linked_tg_;
+	bool heard = false;
+	if (!sub && heard_tg_ && heard_clock_.isValid() && heard_clock_.elapsed() < 15 * 60 * 1000 && !static_tgs_.contains(heard_tg_)) { sub = heard_tg_; heard = true; }
+	if (!sub || (tg == sub && !priv)) return;
+	const qint64 now = QDateTime::currentMSecsSinceEpoch();
+	while (!auto_unlinks_.isEmpty() && now - auto_unlinks_.first() > 60000) auto_unlinks_.removeFirst();
+	if (auto_unlinks_.size() >= 3) { emit log(QString("자동 Unlink 건너뜀: 1분에 3번까지 (TG %1)").arg(sub)); return; }
+	auto_unlinks_.append(now);
+	unlinked_heard_ = sub;
+	heard_tg_ = 0;
+	request_unlink(QString("TG %1 연결 해제 후 %2%3").arg(sub).arg(what).arg(heard ? " (최근 들어온 그룹)" : ""));
+}
+
 void Session::request_unlink(const QString &why)
 {
 	if (!hb_->connected()) { emit log("Unlink 안 함: 마스터 미접속"); return; }
@@ -276,6 +361,7 @@ void Session::on_unlink_tick()
 	last_tx_end_.start();
 	tx_rec_.duration_ms = QDateTime::currentMSecsSinceEpoch() - tx_rec_.start_ms;
 	emit call_finished(tx_rec_);
+	unlink_done_.start();
 	emit log("Unlink 완료");
 	emit tx_state(false, cfg_.tg, cfg_.priv);
 }
@@ -305,6 +391,29 @@ int Session::short_tx_in_window()
 void Session::on_dmrd(dmr::Dmrd p)
 {
 	if (tx_.active()) return;		// 내가 송신 중일 때 들어온 것은 재생하지 않음
+	if (!p.priv && p.stream != seen_stream_ && int(p.dst) != cfg_.unlink_tg) {		// 새 그룹 수신: 구독 기록 (채널 바꿀 때 Unlink 판단, 4000은 제외)
+		seen_stream_ = p.stream;
+		// Unlink 중이거나 끝난 지 5초 안에 오는 그 TG 소리는 남아 있던 것 → 구독으로 보지 않음
+		const bool leftover = unlinked_heard_ && int(p.dst) == unlinked_heard_ && (unlinking_ || (unlink_done_.isValid() && unlink_done_.elapsed() < 5000));
+		if (!leftover) {
+			if (unlinked_heard_ && int(p.dst) == unlinked_heard_) {
+				static_tgs_.insert(unlinked_heard_);
+				emit log(QString("TG %1은 Unlink 뒤에도 들어옴 → 고정(Static) TG로 보고 자동 Unlink를 보내지 않음 (BM SelfCare에서 지울 수 있음)").arg(unlinked_heard_));
+				unlinked_heard_ = 0;
+			}
+			heard_tg_ = int(p.dst);
+			heard_clock_.start();
+		}
+	}
+	// 지금 채널만 듣기: 지금 대상(그룹)과 다른 그룹 수신은 휴대폰으로 보내지 않음 (개인호출은 항상 통과)
+	if (cfg_.rx_target_only && !p.priv && !(rx_.active() && rx_rec_.dst == p.dst) && (cfg_.priv || int(p.dst) != cfg_.tg)) {
+		if (p.stream != filtered_stream_) {
+			filtered_stream_ = p.stream;
+			emit log(QString("수신 거름: TG %1 그룹 %2 (지금 채널 %3%4이 아님 - 휴대폰으로 안 보냄)")
+					 .arg(p.dst).arg(ids_ ? ids_->display(p.src) : QString::number(p.src)).arg(cfg_.tg).arg(cfg_.priv ? " 개인" : ""));
+		}
+		return;
+	}
 	last_rx_pkt_.start();
 	std::vector<dmr::VoiceRx::Event> ev;
 	rx_.feed(p, ev);
@@ -389,6 +498,7 @@ bool Session::active_call(CallRecord &r) const
 
 QString Session::master_state_text() const
 {
+	if (cfg_.test_mode) return QStringLiteral("시험 모드 (BM 연결 안 함)");
 	static const char *names[] = {"정지", "주소 확인 중", "로그인 중", "인증 중", "설정 전송 중", "접속됨", "재시도 대기"};
 	return QString::fromUtf8(names[int(hb_->state())]);
 }
@@ -615,6 +725,29 @@ void Session::notice_begin()
 		notice_sent_ = 0;
 		return;
 	}
+	if (c.source == "echo") {		// 내부 에코: 내 목소리를 되돌려 들려줌
+		const QString label = QStringLiteral("에코 시험");
+		const quint32 from = quint32(cfg_.echo_tg > 0 ? cfg_.echo_tg : 9999);
+		usrp_->send_call_info(from, 0, cfg_.dmr_id, cfg_.slot, cfg_.cc, false, label);
+		QJsonObject d{{"notice", true}, {"echo", true}, {"src", qint64(from)}, {"dst", qint64(cfg_.dmr_id)}, {"priv", false}, {"slot", cfg_.slot},
+					  {"call", label}, {"name", QStringLiteral("내 목소리 (BM 안 거침)")}, {"source", "echo"}};
+		if (notice_resume_) d["resume"] = true;
+		usrp_->send_call_detail(d);
+		if (!notice_rec_active_) {
+			notice_rec_ = CallRecord();
+			notice_rec_.start_ms = QDateTime::currentMSecsSinceEpoch();
+			notice_rec_.tx = false; notice_rec_.src = from; notice_rec_.dst = cfg_.dmr_id; notice_rec_.priv = false;
+			notice_rec_.slot = cfg_.slot; notice_rec_.kind = "echo";
+			notice_rec_.src_call = label; notice_rec_.via = cfg_.name;
+			notice_rec_active_ = true;
+			emit call_started(notice_rec_);
+		}
+		emit log("에코 들려줌");
+		notice_on_ = true;
+		notice_clock_.start();
+		notice_sent_ = 0;
+		return;
+	}
 	const QString label = notice_label(c.ai);
 	// 휴대폰 화면 이름표 + DVBridge 클라이언트용 상세 정보
 	usrp_->send_call_info(cfg_.dmr_id, 0, cfg_.dmr_id, cfg_.slot, cfg_.cc, true, label);
@@ -659,8 +792,8 @@ void Session::notice_finish(const QString &why)
 		notice_rec_active_ = false;
 		emit call_finished(notice_rec_);
 	}
-	const bool ic = !notice_q_.isEmpty() && notice_q_.first().source == "intercom";
-	emit log(QString(ic ? "내부 채널 수신 끝 (%1)" : "공지 끝 (%1)").arg(why));
+	const QString src = notice_q_.isEmpty() ? QString() : notice_q_.first().source;
+	emit log(QString(src == "intercom" ? "내부 채널 수신 끝 (%1)" : src == "echo" ? "에코 끝 (%1)" : "공지 끝 (%1)").arg(why));
 	if (!notice_q_.isEmpty()) notice_q_.removeFirst();
 	notice_pos_ = 0;
 }

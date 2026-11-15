@@ -84,9 +84,9 @@ int main(int argc, char **argv)
 			socks.append(t);
 		}
 		QElapsedTimer w; w.start();
-		// PC가 바쁠 때도 안정적으로: 4명 연결 + 5번째 응답 도착 + 첫 청취자 응답 머리 도착까지 (최대 3초)
+		// PC가 바쁠 때도 안정적으로: 4명 연결 + 5번째 응답 도착 + 첫 청취자 응답 머리 도착까지 (최대 8초 - 빌드 중 바쁠 때 3초로는 모자란 적 있음)
 		QByteArray fifth_buf, head_buf;
-		while (w.elapsed() < 3000) {
+		while (w.elapsed() < 8000) {
 			QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
 			for (auto *t : socks) t->waitForReadyRead(5);
 			fifth_buf += socks[4]->readAll();
