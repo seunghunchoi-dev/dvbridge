@@ -1,6 +1,6 @@
 # DMRBridge
 
-BrandMeister 등 DMR 마스터(Homebrew 방식)에 접속해 휴대폰 **DVSwitch Mobile**과 음성을 이어 주는
+BrandMeister 등 DMR 마스터(Homebrew 방식)에 접속해 휴대폰 앱과 음성을 이어 주는
 **Windows용 아마추어 무선 브리지 프로그램**입니다. 가상 머신이나 WSL 없이 Windows에서 바로 동작합니다.
 
 - 여러 사용자 동시 접속 (사용자마다 핫스팟 ID·USRP 포트)
@@ -53,7 +53,7 @@ scripts\package.bat    :: 포터블 zip·설치 파일 (dist 폴더)
 |---|---|
 | `core/dmr` | ETSI TS 102 361-1 기반 DMR 버스트·FEC·LC·음성 순서기 |
 | `core/net` | Homebrew(MMDVM) 마스터 접속, RadioID 명단 받기 |
-| `core/audio` | USRP (DVSwitch Mobile) |
+| `core/audio` | USRP (휴대폰 앱 연결) |
 | `core/session` | 사용자별 브릿지 세션, 통화 이력, 공지·내부 채널 |
 | `core/web` | 웹 설정·대시보드 서버 |
 | `core/vocoder`, `plugin_api` | 보코더 플러그인 로더와 플러그인 규격 (보코더 자체는 없음) |
@@ -73,4 +73,4 @@ scripts\package.bat    :: 포터블 zip·설치 파일 (dist 폴더)
 - Qt 6 (LGPL v3, 동적 링크·수정 없음), MinGW-w64 런타임 (GCC Runtime Library Exception) — `packaging/THIRD_PARTY_NOTICES.txt`
 - 음성 팩: ONNX Runtime (MIT, Microsoft), Supertonic 3 모델 (Supertone Inc., BigScience Open RAIL-M — 사용 제한 있음, `packaging/voicepack_README.txt`)
 
-BrandMeister, DVSwitch, RadioID는 각 소유자의 이름이며, 이 프로젝트는 그들과 제휴하지 않은 독립 프로젝트입니다.
+BrandMeister, RadioID는 각 소유자의 이름이며, 이 프로젝트는 그들과 제휴하지 않은 독립 프로젝트입니다.
