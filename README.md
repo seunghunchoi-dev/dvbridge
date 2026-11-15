@@ -22,10 +22,23 @@ BrandMeister 등 DMR 마스터(Homebrew 방식)에 접속해 휴대폰 앱과 �
 | `DMRBridge-0.1-setup.exe` | 설치 파일 (Windows 10·11 64비트) |
 | `DMRBridge-0.1-win64.zip` | 설치 없이 쓰는 포터블판 |
 | `DMRBridge-voicepack-0.1-setup.exe` | (선택) 자연스러운 목소리 음성 팩 — 브릿지 공지용 |
-| `추가 설치 안내.txt` | 따로 준비할 것 정리 |
+| `DMRBridge-0.1-manual.pdf` | 사용 설명서 (인쇄용) |
+| `DMRBridge-0.1-addons-guide.txt` | 추가 설치 안내 — 따로 준비할 것 정리 |
 
 **보코더(AMBE+2)는 들어 있지 않습니다.** DMR 음성을 쓰려면 보코더 플러그인(`vocoder_*.dll`)을 직접 구하시고,
 그 라이선스·특허 조건도 직접 확인해 주세요. 설치 중 "보코더 플러그인 (선택)" 단계에서 고르거나 나중에 `plugins` 폴더에 넣습니다.
+
+## 함께 쓰는 클라이언트 (PC판·안드로이드판)
+
+DMRBridge 서버에 붙어 DMR 무전을 듣고 말하는 전용 클라이언트도 함께 만들었습니다. 같은 MIT 라이선스입니다.
+DVSwitch Mobile 대신 쓰거나 함께 쓸 수 있습니다.
+
+| 클라이언트 | 저장소 | 받을 파일 |
+|---|---|---|
+| **안드로이드판** | [dmrbridge-client-android](https://github.com/seunghunchoi-dev/dmrbridge-client-android) | [Releases](https://github.com/seunghunchoi-dev/dmrbridge-client-android/releases)의 `DMRBridgeClient-0.4.apk` |
+| **PC판** (Windows) | [dmrbridge-client-pc](https://github.com/seunghunchoi-dev/dmrbridge-client-pc) | [Releases](https://github.com/seunghunchoi-dev/dmrbridge-client-pc/releases)의 `DMRBridgeClient-0.4-setup.exe` |
+
+클라이언트 사용법은 각 저장소의 Wiki와 설명서 PDF를 보세요.
 
 ## 사용 설명서
 
