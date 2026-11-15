@@ -276,6 +276,7 @@ int main(int argc, char **argv)
 	py.reset();
 	s.notice_add("공지 제목", "tts", tone(0.5));
 	CHECK(wait_until([&] { py.drain(); return py.unkey > 0; }, 4000), "pyUC에도 공지 전달");
+	CHECK(!py.set_info.isEmpty() && (uchar(py.set_info[0][13]) & 0x80) == 0, "pyUC에는 공지를 그룹으로 (개인호출이면 답장 채널로 바뀜)");
 	CHECK(py.set_info.size() == 1 && Client::label(py.set_info[0]) == QByteArray("BRIDGE NOTICE") && !py.non_ascii, "pyUC 이름표는 ASCII \"BRIDGE NOTICE\" (한글 없음)");
 	py.reset();
 	py.send(1, false, QByteArray("*YSF", 5), 32 + 5);

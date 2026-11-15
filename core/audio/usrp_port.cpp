@@ -195,12 +195,21 @@ void UsrpPort::send_voice(const int16_t pcm[kSamples])
 void UsrpPort::end_voice()
 {
 	if (!sending_) return;
-	send_raw(T_VOICE, false, QByteArray());
+	send_raw(T_VOICE, false, pyuc_ ? QByteArray(kSamples * 2, '\0') : QByteArray());
 	sending_ = false;
+	if (pyuc_) {
+		// pyUC 계열은 소리를 재생하느라 밀리면 이 한 패킷을 놓쳐 "계속 수신 중"으로 남는 일이 있음 (실기 시험)
+		//   → 0.2초·0.6초 뒤 한 번씩 더 (그 사이 새 통화가 시작됐으면 보내지 않음). 같은 keyup 0이 겹쳐 와도 무해
+		for (int ms : {200, 600})
+			QTimer::singleShot(ms, this, [this] { if (!sending_ && pyuc_) send_raw(T_VOICE, false, QByteArray(kSamples * 2, '\0')); });
+	}
 }
 
 void UsrpPort::send_call_info(quint32 src, quint32 rptr, quint32 dst, int slot, int cc, bool priv, const QString &call)
 {
+	// pyUC 계열은 개인호출(src > 10000)을 받으면 스스로 "txTg=<src>#"로 답장 채널을 바꿈
+	//   → 공지(자기 ID에서 자기 ID로 가는 개인호출 모양)는 그룹으로 보내 채널이 바뀌지 않게
+	if (pyuc_ && priv && src == dst) priv = false;
 	auto tlv = [&](QByteArray c) {
 		if (c.isEmpty()) c = QByteArray::number(src);
 		QByteArray t;
