@@ -157,10 +157,10 @@ int main(int argc, char **argv)
 		CHECK(NoticeService::radio_text("HAM", "phonetic", "HAM=햄 라디오") == QString::fromUtf8("햄 라디오"), "사용자 발음 사전 적용");
 	}
 	std::printf("[1-2] BM 위치 칸 (장비명)\n");
-	CHECK(Session::make_location("Galaxy A17") == "DMRBridge Galaxy A17", "Galaxy A17 → \"DMRBridge Galaxy A17\" (20자)");
-	CHECK(Session::make_location("Galaxy S24 Ultra") == "DMRBridge S24 Ultra", "20자 넘으면 Galaxy 생략");
-	CHECK(Session::make_location("PC") == "DMRBridge PC" && Session::make_location("") == "DMRBridge", "짧은 이름·빈 이름");
-	CHECK(Session::make_location("승훈의 A17") == "DMRBridge A17" && Session::make_location("A Very Long Device Name X").size() == 20, "한글 빼고, 20자로 자름");
+	CHECK(Session::make_location("Galaxy A17") == "DVBridge Galaxy A17", "Galaxy A17 → \"DVBridge Galaxy A17\" (20자)");
+	CHECK(Session::make_location("Galaxy S24 Ultra") == "DVBridge S24 Ultra", "20자 넘으면 Galaxy 생략");
+	CHECK(Session::make_location("PC") == "DVBridge PC" && Session::make_location("") == "DVBridge", "짧은 이름·빈 이름");
+	CHECK(Session::make_location("승훈의 A17") == "DVBridge A17" && Session::make_location("A Very Long Device Name X").size() == 20, "한글 빼고, 20자로 자름");
 	std::printf("[2] 세션 공지 (BM과 무관)\n");
 	SessionConfig cfg;
 	cfg.name = "HL0EXM";

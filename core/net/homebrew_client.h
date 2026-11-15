@@ -29,12 +29,12 @@ struct HomebrewConfig {
 	quint8 power = 1, cc = 1;
 	double latitude = 0.0, longitude = 0.0;	// RPTC에는 공백 없는 고정폭 숫자로 기록
 	quint16 height = 0;
-	QString location = "Windows", description = "DMRBridge";
+	QString location = "Windows", description = "DVBridge";
 	char slot_mode = '4';			// '4' = 단일 슬롯 핫스팟(DMO)
 	QString url;
 	// BM은 패키지 ID를 "MMDVM_<하드웨어>" 형식으로 해석 (BM 장치 정보 표시로 확인), 소프트웨어 ID는 날짜 형식이 일반적
 	QString software_id = "20261114";
-	QString package_id = "MMDVM_DMRBridge";
+	QString package_id = "MMDVM_DVBridge";
 	QString options;			// 예: "TS2=450" (선택)
 };
 

@@ -1,15 +1,15 @@
-DMRBridge 음성 팩 — 자연스러운 목소리 (Supertonic 3)
+DVBridge 음성 팩 — 자연스러운 목소리 (Supertonic 3)
 =====================================================
 
 브릿지 공지의 "문장 읽어 주기"·예약 공지를 사람처럼 자연스러운 한국어 목소리(여성 5·남성 5)로 읽어 줍니다.
-DMRBridge 본체를 가볍게 두려고 따로 나눈 선택 설치 꾸러미입니다. 없어도 DMRBridge는 Windows 기본 목소리로 동작합니다.
+DVBridge 본체를 가볍게 두려고 따로 나눈 선택 설치 꾸러미입니다. 없어도 DVBridge는 Windows 기본 목소리로 동작합니다.
 
 
 1. 설치
 -------
-- DMRBridge를 먼저 설치한 뒤 DMRBridge-voicepack-0.1-setup.exe 를 실행하세요. 설치된 DMRBridge 폴더를 찾아
-  그 안의 voice 폴더에 넣고, 켜져 있던 DMRBridge는 다시 시작합니다. (포터블판은 폴더 선택에서 그 폴더를 고르세요)
-- 설치 중 AI 음성 모델 라이선스(Open RAIL-M)에 동의해야 합니다. 따로 제거하지 않고 DMRBridge를 제거할 때 함께 지워집니다.
+- DVBridge를 먼저 설치한 뒤 DVBridge-voicepack-0.1-setup.exe 를 실행하세요. 설치된 DVBridge 폴더를 찾아
+  그 안의 voice 폴더에 넣고, 켜져 있던 DVBridge는 다시 시작합니다. (포터블판은 폴더 선택에서 그 폴더를 고르세요)
+- 설치 중 AI 음성 모델 라이선스(Open RAIL-M)에 동의해야 합니다. 따로 제거하지 않고 DVBridge를 제거할 때 함께 지워집니다.
 - 웹 설정 → 브릿지 공지 → 목소리에서 "자연스러운 목소리(AI) · 여성 1" 등을 고르고,
   아래 "사용 제한" 칸에 동의한 뒤 [예약·목소리 저장]을 누릅니다. 동의하지 않으면 Windows 목소리로 읽습니다.
 - 공지를 만들 때만 잠깐 실행되고 끝나면 메모리를 돌려줍니다. 한 문장에 몇 초 걸립니다.
@@ -26,7 +26,7 @@ DMRBridge 본체를 가볍게 두려고 따로 나눈 선택 설치 꾸러미입
   3) 남을 해칠 목적으로, 사실이 아님을 확인할 수 있는 거짓 정보·콘텐츠를 만들거나 퍼뜨리는 일
   4) 개인에게 해를 끼칠 수 있는 개인 식별 정보를 만들거나 퍼뜨리는 일
   5) 만든 정보·콘텐츠가 기계로 만든 것임을 분명히 알리지 않고 게시·송출하는 일
-     → DMRBridge는 이 음성 팩으로 만든 공지를 휴대폰 화면에 "브릿지 공지 (AI 음성)"으로 표시합니다
+     → DVBridge는 이 음성 팩으로 만든 공지를 휴대폰 화면에 "브릿지 공지 (AI 음성)"으로 표시합니다
   6) 남의 명예를 훼손하거나 비방·괴롭히는 일
   7) 본인 동의 없이 다른 사람을 흉내 내거나 사칭하는 일
   8) 개인의 법적 권리에 불리한 영향을 주거나 구속력 있는 의무를 만들거나 바꾸는 완전 자동화된 결정
@@ -43,7 +43,7 @@ Supertone Inc.의 공식 제품이 아니며, Supertone Inc.의 보증·제휴�
 
 3. 들어 있는 것과 라이선스
 --------------------------
-- voice\dmrbridge_tts.exe        : DMRBridge 음성 팩 도우미 (MIT, Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR))
+- voice\dvbridge_tts.exe        : DVBridge 음성 팩 도우미 (MIT, Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR))
                                    추론 순서는 supertonic 파이썬 패키지(MIT, Copyright (c) 2025 Supertone Inc.)를 참고해 다시 작성
                                    → voice\supertonic-MIT-LICENSE.txt
 - voice\onnxruntime.dll          : ONNX Runtime 1.31.1 (MIT, Copyright (c) Microsoft Corporation) 공식 배포판 그대로

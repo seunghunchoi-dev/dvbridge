@@ -1,7 +1,7 @@
-THIRD-PARTY NOTICES — DMRBridge 0.1
+THIRD-PARTY NOTICES — DVBridge 0.1
 ====================================
 
-DMRBridge itself is MIT licensed (see LICENSE). This package also contains the
+DVBridge itself is MIT licensed (see LICENSE). This package also contains the
 following third-party components, which keep their own licenses.
 
 
@@ -16,7 +16,7 @@ which supplements LICENSES\GPL-3.0.txt).
   with your own compatible build of Qt 6.11.3 (or later compatible version).
 - Complete corresponding source code of Qt 6.11.3:
     https://download.qt.io/official_releases/qt/6.11/6.11.3/single/
-  On request through the channel where you obtained DMRBridge, the distributor will also
+  On request through the channel where you obtained DVBridge, the distributor will also
   provide a copy of this source code for at least three years, for no more than the cost
   of physically performing the distribution.
 
@@ -39,6 +39,6 @@ Source: https://www.mingw-w64.org/
 No voice codec (vocoder) is included in this package. A vocoder plugin, if used, is obtained
 separately and is subject to its own license and notices.
 
-The optional voice pack (DMRBridge-voicepack-*-setup.exe: ONNX Runtime, MIT; Supertonic 3 model by
+The optional voice pack (DVBridge-voicepack-*-setup.exe: ONNX Runtime, MIT; Supertonic 3 model by
 Supertone Inc., BigScience Open RAIL-M) is distributed separately and carries its own license files
 in the voice\ folder.

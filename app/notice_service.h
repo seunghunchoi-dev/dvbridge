@@ -5,7 +5,7 @@
 //   문장 읽기: Windows 기본 음성 합성(System.Speech, 한국어 목소리 "Microsoft Heami" 등)을 PowerShell로 불러
 //     8kHz 16bit 모노 WAV를 만들고, 알림음(딩동)·반복을 붙여 ready 신호로 넘김 → MainWindow가 사용자 세션에 넣음
 //   예약: 설정의 schedule 목록을 1초마다 확인 (요일·시각이 맞으면 한 번)
-//   음성 팩(선택): <프로그램 폴더>\voice 에 dmrbridge_tts.exe + onnxruntime.dll + supertonic3 모델이 있으면
+//   음성 팩(선택): <프로그램 폴더>\voice 에 dvbridge_tts.exe + onnxruntime.dll + supertonic3 모델이 있으면
 //     자연스러운 목소리(Supertonic 3, 여성 F1~F5·남성 M1~M5)를 씀. 목소리 이름 "st:F1" 형식. 공지 만들 때만 잠깐 실행
 //   설정(JSON, AppConfig::notice):
 //     { "voice": "목소리 이름(비우면 한국어 자동)", "rate": -10~10, "chime": true,

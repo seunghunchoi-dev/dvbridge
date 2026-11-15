@@ -9,7 +9,7 @@ QByteArray DashboardServer::settings_html()
 {
 	return QByteArray(R"HTML(<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DMRBridge 설정</title>
+<title>DVBridge 설정</title>
 <style>
 :root{--bg:#f4f5f7;--card:#fff;--fg:#1d2330;--mut:#6b7280;--line:#e5e7eb;--tx:#c0392b;--ok:#1e8449;--acc:#d35400;--in:#fff;color-scheme:light}
 :root[data-theme=dark]{--bg:#121417;--card:#1c1f24;--fg:#e8eaed;--mut:#9aa0a6;--line:#2c3037;--tx:#e74c3c;--ok:#27ae60;--acc:#e67e22;--in:#15181c;color-scheme:dark}
@@ -51,7 +51,7 @@ button.big{font-size:17px;padding:10px 22px}button.onair{background:var(--tx);bo
 .sch .txt{flex:1 1 260px;margin:0}.sch select{width:auto;margin:0}
 .day{display:inline-block;width:28px;text-align:center;border:1px solid var(--line);border-radius:5px;padding:2px 0;cursor:pointer;user-select:none;font-size:13px}.day.on{background:#c0392b;border-color:#c0392b;color:#fff}
 </style></head><body>
-<header><b>DMRBridge 설정</b><span><a href="/">대시보드</a><button class="th" id="theme" onclick="cycleTheme()" title="화면 테마">테마</button><button class="hd hide" id="logout" onclick="logout()">로그아웃</button></span></header>
+<header><b>DVBridge 설정</b><span><a href="/">대시보드</a><button class="th" id="theme" onclick="cycleTheme()" title="화면 테마">테마</button><button class="hd hide" id="logout" onclick="logout()">로그아웃</button></span></header>
 <main>
 <div id="setup" class="card box hide"><h2>관리자 비밀번호 정하기</h2>
  <p class="mut" id="setupText">웹 설정을 쓰려면 먼저 관리자 비밀번호를 정하세요 (6자 이상).</p>
@@ -89,7 +89,7 @@ button.big{font-size:17px;padding:10px 22px}button.onair{background:var(--tx);bo
    <div class="mut" style="font-size:12px">TG 번호는 한 자리씩 읽습니다(TG 450 → 티지 포 파이브 제로). 바꾼 뒤 [예약·목소리 저장]을 누르고 [미리 듣기]로 들어 보세요.</div></div>
   <div class="nsec"><h3>② 마이크로 바로 말하기</h3>
    <div class="row" style="margin-top:0"><button class="big" id="micBtn" onclick="micToggle()">🎤 방송 시작</button><span class="meter"><i id="micLv"></i></span><span class="mut" id="micTime"></span></div>
-   <div class="mut" style="font-size:12px;margin-top:4px">브라우저 보안 규칙 때문에 DMRBridge가 실행 중인 PC에서 <b>http://localhost:포트/settings</b> 로 열었을 때만 마이크를 쓸 수 있습니다. 처음에 마이크 허용 창이 뜨면 [허용]을 누르세요.</div></div>
+   <div class="mut" style="font-size:12px;margin-top:4px">브라우저 보안 규칙 때문에 DVBridge가 실행 중인 PC에서 <b>http://localhost:포트/settings</b> 로 열었을 때만 마이크를 쓸 수 있습니다. 처음에 마이크 허용 창이 뜨면 [허용]을 누르세요.</div></div>
   <div class="nsec"><h3>③ 예약 공지 (정해진 시각에 자동으로 읽기)</h3>
    <div id="schList"></div>
    <div class="row"><button onclick="schAdd()">+ 예약 추가</button></div>
@@ -156,14 +156,14 @@ button.big{font-size:17px;padding:10px 22px}button.onair{background:var(--tx);bo
 const $=id=>document.getElementById(id);
 const THEMES=['auto','light','dark'],THEME_NAME={auto:'자동',light:'밝게',dark:'어둡게'};
 function applyTheme(t){if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);$('theme').textContent='테마: '+THEME_NAME[t];}
-function loadTheme(){try{const t=localStorage.getItem('dmrbridge-theme');return THEMES.includes(t)?t:'auto'}catch(e){return 'auto'}}
-function cycleTheme(){const t=THEMES[(THEMES.indexOf(loadTheme())+1)%3];try{localStorage.setItem('dmrbridge-theme',t)}catch(e){}applyTheme(t);}
+function loadTheme(){try{const t=localStorage.getItem('dvbridge-theme');return THEMES.includes(t)?t:'auto'}catch(e){return 'auto'}}
+function cycleTheme(){const t=THEMES[(THEMES.indexOf(loadTheme())+1)%3];try{localStorage.setItem('dvbridge-theme',t)}catch(e){}applyTheme(t);}
 applyTheme(loadTheme());
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function show(id){$(id).classList.remove('hide')}function hide(id){$(id).classList.add('hide')}
 function msg(id,t,ok){const e=$(id);e.textContent=t||'';e.className='msg '+(ok?'ok':'err');}
 async function api(path,body){
- const r=await fetch(path,body===undefined?{cache:'no-store',credentials:'same-origin'}:{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-DMRBridge':'1'},body:JSON.stringify(body)});
+ const r=await fetch(path,body===undefined?{cache:'no-store',credentials:'same-origin'}:{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-DVBridge':'1'},body:JSON.stringify(body)});
  let j={};try{j=await r.json()}catch(e){}
  if(r.status===401&&path!=='/api/admin/login'){await init();}
  return {ok:r.ok&&j.ok!==false,status:r.status,data:j};
@@ -172,7 +172,7 @@ let cfg=null;
 async function init(){
  const st=(await api('/api/admin/state')).data;
  ['setup','login','app'].forEach(hide);hide('logout');
- if(!st.has_password){show('setup');if(!st.local){$('setupText').textContent='아직 관리자 비밀번호가 없습니다. DMRBridge가 실행 중인 PC의 브라우저에서 http://localhost:포트/settings 로 먼저 정해 주세요.';hide('setupForm');}return;}
+ if(!st.has_password){show('setup');if(!st.local){$('setupText').textContent='아직 관리자 비밀번호가 없습니다. DVBridge가 실행 중인 PC의 브라우저에서 http://localhost:포트/settings 로 먼저 정해 주세요.';hide('setupForm');}return;}
  if(!st.logged_in){show('login');$('lp').focus();return;}
  show('app');show('logout');await load();
 }
@@ -185,7 +185,7 @@ async function load(){
  renderTg();renderNotice();
  if(cfg.netcheck&&!cfg.netcheck.running&&!$('nc').innerHTML)showNet();
  $('runState').innerHTML=cfg.service_on?'<b style="color:var(--ok)">● 서비스 켜짐</b>':'<b class="mut">○ 서비스 꺼짐</b>';
- $('voc').innerHTML=(cfg.vocoders||[]).length?'사용 중: '+cfg.vocoders.map(esc).join(', '):'<b style="color:var(--tx)">보코더 플러그인이 없습니다</b> — 음성이 나오지 않습니다. DMRBridge에는 보코더가 들어 있지 않으니, AMBE+2 보코더 플러그인(vocoder_*.dll)을 직접 구해(라이선스·특허 조건은 각자 확인) 아래 폴더에 넣고 DMRBridge를 다시 시작하세요.<br><code>'+esc(cfg.plugin_dir)+'</code>';
+ $('voc').innerHTML=(cfg.vocoders||[]).length?'사용 중: '+cfg.vocoders.map(esc).join(', '):'<b style="color:var(--tx)">보코더 플러그인이 없습니다</b> — 음성이 나오지 않습니다. DVBridge에는 보코더가 들어 있지 않으니, AMBE+2 보코더 플러그인(vocoder_*.dll)을 직접 구해(라이선스·특허 조건은 각자 확인) 아래 폴더에 넣고 DVBridge를 다시 시작하세요.<br><code>'+esc(cfg.plugin_dir)+'</code>';
  $('ids').textContent=(cfg.iddb_count?cfg.iddb_count.toLocaleString()+'명 ('+cfg.iddb_date+' 받음)':'명단 없음')+(cfg.iddb_status?' — '+cfg.iddb_status:'');
  $('idBtn').disabled=!!cfg.iddb_busy;if(cfg.iddb_busy)setTimeout(load,1500);
  $('users').innerHTML=(cfg.users||[]).length?cfg.users.map((u,i)=>'<tr><td>'+(u.enabled?'✔':'')+'</td><td><b>'+esc(u.callsign)+'</b></td><td>'+esc(u.hotspot_id)+'</td><td>'+esc(u.host)+':'+esc(u.port)+'</td><td>'+esc(u.usrp_port)+'</td><td>'+(u.priv?esc(u.tg)+' <span class="tag">개인</span>':'TG '+esc(u.tg))+'</td><td>'+(u.password_set?'<span class="tag">저장됨</span>':'<span class="tag" style="color:var(--tx)">없음</span>')+'</td><td><button class="sm" onclick="edit('+i+')">편집</button> <button class="sm danger" onclick="del('+i+')">삭제</button></td></tr>').join(''):'<tr><td colspan="8" class="mut">사용자가 없습니다 — [+ 사용자 추가]</td></tr>';
@@ -279,7 +279,7 @@ async function ntSay(){
 }
 async function ntStop(){if(mic)await micStop();const r=await api('/api/admin/action',{action:'notice_stop'});msg('ntMsg',r.data.message||'',r.ok);setTimeout(load,500);}
 // ---- 소리 장치 (이 브라우저에 저장) ----
-const DEVKEY='dmrbridge-notice-dev';
+const DEVKEY='dvbridge-notice-dev';
 function devLoad(){try{return JSON.parse(localStorage.getItem(DEVKEY)||'{}')}catch(e){return {}}}
 function devSave(){const d={mic:$('devMic').value,spk:$('devSpk').value,gain:Number($('micGain').value),mon:$('micMon').checked,local:$('ntLocal').checked};try{localStorage.setItem(DEVKEY,JSON.stringify(d))}catch(e){}}
 function micGainVal(){return Number($('micGain').value||100)/100}
@@ -324,7 +324,7 @@ async function micTest(){
 let mic=null;
 function micToggle(){mic?micStop():micStart();}
 async function micStart(){
- if(!window.isSecureContext||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return msg('ntMsg','이 주소에서는 마이크를 쓸 수 없습니다. DMRBridge가 실행 중인 PC에서 http://localhost:'+(location.port||80)+'/settings 로 열어 주세요');
+ if(!window.isSecureContext||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return msg('ntMsg','이 주소에서는 마이크를 쓸 수 없습니다. DVBridge가 실행 중인 PC에서 http://localhost:'+(location.port||80)+'/settings 로 열어 주세요');
  let stream;
  try{stream=await navigator.mediaDevices.getUserMedia({audio:micConstraints()});}
  catch(e){return msg('ntMsg','마이크를 열 수 없습니다 (허용 안 함 또는 마이크 없음): '+e.message);}

@@ -192,7 +192,7 @@ void UsrpPort::send_info(int tg, bool priv, int ts)
 	// 없으면 강제 종료됨 (2026-11-14 logcat: NullPointerException ServerInfo$AB.toString). 형식이 공개돼 있지 않아 보내지 않음
 	if (type_le_) return;
 	QString json = QString("INFO:{\"tlv\":{\"ambe_mode\":\"DMR\",\"ts\":%1},\"last_tune\":\"%2%3\"").arg(ts).arg(tg).arg(priv ? "#" : "");
-	if (intercom_tg_ > 0) json += QString(",\"intercom_tg\":%1").arg(intercom_tg_);	// 내부 채널 번호 (DMRBridge 클라이언트 빠른 버튼)
+	if (intercom_tg_ > 0) json += QString(",\"intercom_tg\":%1").arg(intercom_tg_);	// 내부 채널 번호 (DVBridge 클라이언트 빠른 버튼)
 	json += "}";
 	QByteArray b = json.toLatin1();
 	b.append('\0');

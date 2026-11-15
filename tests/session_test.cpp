@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	if (argc < 3) { std::printf("usage: session_test <fake_master.py> <plugins dir>\n"); return 2; }
 	const QString master_py = QString::fromLocal8Bit(argv[1]);
 	const QString plugins = QString::fromLocal8Bit(argv[2]);
-	const QString mlog = QDir::tempPath() + "/dmrbridge_session_master.log";
+	const QString mlog = QDir::tempPath() + "/dvbridge_session_master.log";
 	QFile::remove(mlog);
 
 	QProcess master;

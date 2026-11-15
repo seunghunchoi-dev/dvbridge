@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: MIT
-# DMRBridge 배포 패키지 만들기 (package.bat가 windeployqt 후 호출)
-#   1) DMRBridge-<ver>-win64.zip            본체 (포터블, 보코더 없음) - package.bat가 이것으로 설치 파일도 만듦
-#   2) voicepack 폴더                        음성 팩 설치 파일(DMRBridge-voicepack-<ver>-setup.exe)의 재료 (별도 내려받기용)
+# DVBridge 배포 패키지 만들기 (package.bat가 windeployqt 후 호출)
+#   1) DVBridge-<ver>-win64.zip            본체 (포터블, 보코더 없음) - package.bat가 이것으로 설치 파일도 만듦
+#   2) voicepack 폴더                        음성 팩 설치 파일(DVBridge-voicepack-<ver>-setup.exe)의 재료 (별도 내려받기용)
 # 보코더는 배포하지 않음 (사용자가 직접 구함, 설치 파일에서 가진 파일을 고를 수 있음)
 # 넣지 않는 것: 시험 프로그램, 보코더 파일, 설정·로그·이력·명단(개인정보), 개발 기록
 import os, shutil, sys, zipfile
 
 VER = sys.argv[4] if len(sys.argv) > 4 else '0.1'
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))	# dmrbridge
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))	# dmrbridge (개발 폴더)
 BUILD = sys.argv[1]			# C:\dev\DMR\build\dmrbridge
-STAGE = sys.argv[2]			# windeployqt 결과 폴더 (DMRBridge.exe + Qt)
+STAGE = sys.argv[2]			# windeployqt 결과 폴더 (DVBridge.exe + Qt)
 OUT = sys.argv[3]			# 출력 폴더
 MINGW_LIC = r'C:\Qt\Tools\mingw1310_64\licenses'
 PK = os.path.join(ROOT, 'packaging')
@@ -37,7 +37,7 @@ def manual(dst_dir):
 	html = re.sub(r'src="(img/[^"]+\.png)"', inline, html)
 	edge = os.path.join(os.environ.get('ProgramFiles(x86)', r'C:\Program Files (x86)'), r'Microsoft\Edge\Application\msedge.exe')
 	if not os.path.exists(edge): sys.exit('설명서 PDF를 만들 Microsoft Edge가 없습니다: ' + edge)
-	tmp = tempfile.mkdtemp(prefix='dmrb_manual_', dir=OUT)
+	tmp = tempfile.mkdtemp(prefix='dvb_manual_', dir=OUT)
 	th, tp = os.path.join(tmp, 'manual.html'), os.path.join(tmp, 'manual.pdf')
 	open(th, 'w', encoding='utf-8', newline='\n').write(html)
 	subprocess.run([edge, '--headless=new', '--disable-gpu', '--no-pdf-header-footer', '--user-data-dir=' + os.path.join(tmp, 'prof'),
@@ -66,7 +66,7 @@ def zipdir(folder, zpath, top):
 
 
 # ---- 1) 본체 ----
-name = 'DMRBridge-%s-win64' % VER
+name = 'DVBridge-%s-win64' % VER
 app = os.path.join(OUT, name)
 shutil.rmtree(app, ignore_errors=True)
 shutil.copytree(STAGE, app)
@@ -93,19 +93,19 @@ zips = [z1]
 
 # ---- 2) 음성 팩 (선택, 별도 내려받기): 자연스러운 목소리 Supertonic 3 → 설치 파일 재료 폴더 ----
 #   모델 원본(수정 안 함)은 로컬 자료 DMR\work\voicepack\supertonic3 (Hugging Face Supertone/supertonic-3)
-VP_MODEL = os.environ.get('DMRB_VOICEPACK_MODEL', os.path.join(os.path.dirname(ROOT), 'work', 'voicepack', 'supertonic3'))
-vp = os.path.join(OUT, 'DMRBridge-voicepack-%s' % VER)
+VP_MODEL = os.environ.get('DVB_VOICEPACK_MODEL', os.path.join(os.path.dirname(ROOT), 'work', 'voicepack', 'supertonic3'))
+vp = os.path.join(OUT, 'DVBridge-voicepack-%s' % VER)
 shutil.rmtree(vp, ignore_errors=True)
-if os.path.isfile(os.path.join(VP_MODEL, 'onnx', 'vector_estimator.onnx')) and os.path.isfile(os.path.join(BUILD, 'dmrbridge_tts.exe')):
+if os.path.isfile(os.path.join(VP_MODEL, 'onnx', 'vector_estimator.onnx')) and os.path.isfile(os.path.join(BUILD, 'dvbridge_tts.exe')):
 	vd = os.path.join(vp, 'voice')
 	os.makedirs(vd)
 	TP = os.path.join(ROOT, 'third_party')
-	shutil.copy2(os.path.join(BUILD, 'dmrbridge_tts.exe'), vd)
+	shutil.copy2(os.path.join(BUILD, 'dvbridge_tts.exe'), vd)
 	shutil.copy2(os.path.join(TP, 'onnxruntime', 'bin', 'onnxruntime.dll'), vd)
 	text(os.path.join(TP, 'onnxruntime', 'LICENSE'), os.path.join(vd, 'onnxruntime-LICENSE.txt'))
 	text(os.path.join(TP, 'onnxruntime', 'ThirdPartyNotices.txt'), os.path.join(vd, 'onnxruntime-ThirdPartyNotices.txt'))
 	text(os.path.join(TP, 'supertonic-MIT-LICENSE.txt'), os.path.join(vd, 'supertonic-MIT-LICENSE.txt'))
-	text(os.path.join(ROOT, 'LICENSE'), os.path.join(vd, 'dmrbridge_tts-LICENSE.txt'))
+	text(os.path.join(ROOT, 'LICENSE'), os.path.join(vd, 'dvbridge_tts-LICENSE.txt'))
 	text(os.path.join(PK, 'voicepack_README.txt'), os.path.join(vd, 'README.txt'))
 	md = os.path.join(vd, 'supertonic3')
 	for sub in ('onnx', 'voice_styles'):
@@ -115,7 +115,7 @@ if os.path.isfile(os.path.join(VP_MODEL, 'onnx', 'vector_estimator.onnx')) and o
 	text(os.path.join(VP_MODEL, 'LICENSE'), os.path.join(vp, 'MODEL_LICENSE.txt'))	# 설치 마법사 동의 화면용
 	print('voicepack stage:', vp)
 else:
-	print('음성 팩: 모델(%s) 또는 dmrbridge_tts.exe 없음 - 건너뜀' % VP_MODEL)
+	print('음성 팩: 모델(%s) 또는 dvbridge_tts.exe 없음 - 건너뜀' % VP_MODEL)
 
 for z in zips:
 	print('%s  %.1f MB' % (os.path.basename(z), os.path.getsize(z) / 1048576))

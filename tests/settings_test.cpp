@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	SetConsoleOutputCP(CP_UTF8);
 #endif
 	QTemporaryDir tmp;
-	qputenv("DMRBRIDGE_CONFIG_DIR", tmp.path().toLocal8Bit());
+	qputenv("DVBRIDGE_CONFIG_DIR", tmp.path().toLocal8Bit());
 
 	const QString enc = AppSettings::protect("--비밀#123");
 	CHECK(!enc.isEmpty() && !enc.contains("비밀"), "DPAPI 암호화 결과에 평문 없음");

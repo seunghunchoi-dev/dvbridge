@@ -19,16 +19,16 @@ namespace {
 const char *kTtsScript =
 	"$ErrorActionPreference='Stop'\n"
 	"Add-Type -AssemblyName System.Speech\n"
-	"$t=[IO.File]::ReadAllText($env:DMRB_TTS_IN,[Text.Encoding]::UTF8)\n"
+	"$t=[IO.File]::ReadAllText($env:DVB_TTS_IN,[Text.Encoding]::UTF8)\n"
 	"$s=New-Object System.Speech.Synthesis.SpeechSynthesizer\n"
 	"$vs=@($s.GetInstalledVoices() | Where-Object { $_.Enabled })\n"
 	"$v=$null\n"
-	"if ($env:DMRB_TTS_VOICE) { $v=$vs | Where-Object { $_.VoiceInfo.Name -eq $env:DMRB_TTS_VOICE } | Select-Object -First 1 }\n"
+	"if ($env:DVB_TTS_VOICE) { $v=$vs | Where-Object { $_.VoiceInfo.Name -eq $env:DVB_TTS_VOICE } | Select-Object -First 1 }\n"
 	"if (-not $v) { $v=$vs | Where-Object { $_.VoiceInfo.Culture.Name -eq 'ko-KR' } | Select-Object -First 1 }\n"
 	"if ($v) { $s.SelectVoice($v.VoiceInfo.Name) }\n"
-	"$s.Rate=[int]$env:DMRB_TTS_RATE\n"
+	"$s.Rate=[int]$env:DVB_TTS_RATE\n"
 	"$f=New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(8000,[System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen,[System.Speech.AudioFormat.AudioChannel]::Mono)\n"
-	"$s.SetOutputToWaveFile($env:DMRB_TTS_OUT,$f)\n"
+	"$s.SetOutputToWaveFile($env:DVB_TTS_OUT,$f)\n"
 	"$s.Speak($t)\n"
 	"$s.Dispose()\n";
 const char *kVoicesScript =
@@ -71,9 +71,9 @@ void NoticeService::load_voices()
 {
 	// 음성 팩: 실행 파일·ONNX Runtime·모델이 모두 있어야 씀
 	const QDir vd(voicepack_dir());
-	if (QFile::exists(vd.filePath("dmrbridge_tts.exe")) && QFile::exists(vd.filePath("onnxruntime.dll")) &&
+	if (QFile::exists(vd.filePath("dvbridge_tts.exe")) && QFile::exists(vd.filePath("onnxruntime.dll")) &&
 		QFile::exists(vd.filePath("supertonic3/onnx/vector_estimator.onnx"))) {
-		pack_exe_ = vd.filePath("dmrbridge_tts.exe");
+		pack_exe_ = vd.filePath("dvbridge_tts.exe");
 		pack_model_ = QDir::toNativeSeparators(vd.filePath("supertonic3"));
 	}
 	auto *p = new QProcess(this);
@@ -246,7 +246,7 @@ void NoticeService::next_job()
 {
 	if (proc_ || jobs_.isEmpty()) return;
 	cur_ = jobs_.takeFirst();
-	const QString base = QDir::temp().filePath(QString("dmrbridge_tts_%1").arg(QRandomGenerator::global()->generate(), 8, 16, QChar('0')));
+	const QString base = QDir::temp().filePath(QString("dvbridge_tts_%1").arg(QRandomGenerator::global()->generate(), 8, 16, QChar('0')));
 	cur_in_ = base + ".txt"; cur_out_ = base + ".wav";
 	QFile f(cur_in_);
 	if (!f.open(QIODevice::WriteOnly)) { emit log("공지: 임시 파일을 만들 수 없습니다"); QTimer::singleShot(0, this, &NoticeService::next_job); return; }
@@ -263,10 +263,10 @@ void NoticeService::next_job()
 	job_estimate_ms_ = qint64((cur_ai_ ? 3500 : 1200) + cur_.text.size() * (cur_ai_ ? ms_per_char_st_ : ms_per_char_win_));
 	const int rate = qBound(-10, cfg_.value("rate").toInt(0), 10);
 	QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-	env.insert("DMRB_TTS_IN", cur_in_);
-	env.insert("DMRB_TTS_OUT", cur_out_);
-	env.insert("DMRB_TTS_VOICE", voice);
-	env.insert("DMRB_TTS_RATE", QString::number(qBound(-10, rate - 2, 10)));	// Windows 목소리 "보통"은 무전으로 듣기에 빨라서 두 단계 느리게
+	env.insert("DVB_TTS_IN", cur_in_);
+	env.insert("DVB_TTS_OUT", cur_out_);
+	env.insert("DVB_TTS_VOICE", voice);
+	env.insert("DVB_TTS_RATE", QString::number(qBound(-10, rate - 2, 10)));	// Windows 목소리 "보통"은 무전으로 듣기에 빨라서 두 단계 느리게
 	proc_->setProcessEnvironment(env);
 	QTimer::singleShot(90000, proc_, [p = proc_] { if (p->state() != QProcess::NotRunning) p->kill(); });	// 멈추면 90초 뒤 끝냄
 	connect(proc_, &QProcess::finished, this, [this](int code, QProcess::ExitStatus st) {

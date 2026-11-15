@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)
-# DMRBridge — DMR 마스터 접속 + USRP 브릿지 (독자 작성, DroidStar 코드 미사용)
+# DVBridge — DMR 마스터 접속 + USRP 브릿지 (독자 작성, DroidStar 코드 미사용)
 cmake_minimum_required(VERSION 3.16)
-project(DMRBridge VERSION 0.1 LANGUAGES C CXX)
+project(DVBridge VERSION 0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -48,8 +48,8 @@ add_executable(session_test tests/session_test.cpp)
 target_link_libraries(session_test PRIVATE bridge_core)
 
 # ---- 간이 실행기 (화면 버전 전까지) ----
-add_executable(dmrbridge_cli app/cli_main.cpp)
-target_link_libraries(dmrbridge_cli PRIVATE app_core)
+add_executable(dvbridge_cli app/cli_main.cpp)
+target_link_libraries(dvbridge_cli PRIVATE app_core)
 
 # ---- Windows 화면 (D단계) ----
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -59,18 +59,18 @@ target_link_libraries(app_core PUBLIC bridge_core crypt32)
 
 # 아이콘·버전 정보 리소스 (아이콘은 app/res/make_icon.py로 직접 그린 것)
 enable_language(RC)
-set(ICON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/app/res/dmrbridge.ico)
-configure_file(app/res/dmrbridge.rc.in ${CMAKE_CURRENT_BINARY_DIR}/dmrbridge.rc @ONLY)
-add_executable(DMRBridge WIN32
+set(ICON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/app/res/dvbridge.ico)
+configure_file(app/res/dvbridge.rc.in ${CMAKE_CURRENT_BINARY_DIR}/dvbridge.rc @ONLY)
+add_executable(DVBridge WIN32
     app/gui_main.cpp
     app/main_window.cpp app/main_window.h
-    ${CMAKE_CURRENT_BINARY_DIR}/dmrbridge.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/dvbridge.rc
 )
-target_link_libraries(DMRBridge PRIVATE app_core Qt::Widgets Qt::Network)
+target_link_libraries(DVBridge PRIVATE app_core Qt::Widgets Qt::Network)
 # 트레이·창 아이콘 (Qt 리소스)
-qt_add_resources(DMRBridge "icons" PREFIX "/" BASE app/res FILES app/res/dmrbridge.png)
-set_target_properties(DMRBridge PROPERTIES AUTOMOC ON)
-target_compile_definitions(DMRBridge PRIVATE DMRBRIDGE_VERSION="${PROJECT_VERSION}")
+qt_add_resources(DVBridge "icons" PREFIX "/" BASE app/res FILES app/res/dvbridge.png)
+set_target_properties(DVBridge PROPERTIES AUTOMOC ON)
+target_compile_definitions(DVBridge PRIVATE DVBRIDGE_VERSION="${PROJECT_VERSION}")
 
 add_executable(settings_test tests/settings_test.cpp)
 target_link_libraries(settings_test PRIVATE app_core)
@@ -88,11 +88,11 @@ add_executable(multiuser_test tests/multiuser_test.cpp)
 target_link_libraries(multiuser_test PRIVATE bridge_core)
 
 # ---- 음성 팩 도우미 (자연스러운 목소리, 별도 배포: 모델·ONNX Runtime은 음성 팩에만) ----
-add_executable(dmrbridge_tts tools/voicepack/dmrbridge_tts.cpp)
-target_include_directories(dmrbridge_tts PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnxruntime/include)
-target_compile_definitions(dmrbridge_tts PRIVATE _USE_MATH_DEFINES UNICODE _UNICODE)
-target_link_options(dmrbridge_tts PRIVATE -municode -static -static-libgcc -static-libstdc++)
-target_link_libraries(dmrbridge_tts PRIVATE normaliz)
+add_executable(dvbridge_tts tools/voicepack/dvbridge_tts.cpp)
+target_include_directories(dvbridge_tts PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnxruntime/include)
+target_compile_definitions(dvbridge_tts PRIVATE _USE_MATH_DEFINES UNICODE _UNICODE)
+target_link_options(dvbridge_tts PRIVATE -municode -static -static-libgcc -static-libstdc++)
+target_link_libraries(dvbridge_tts PRIVATE normaliz)
 
 # ---- 자체 AMBE+2 소프트웨어 보코더 (플러그인 DLL, 본체와 별도 배포) ----
 # 공개 저장소에는 보코더 소스가 없음 → 폴더가 있을 때만 빌드

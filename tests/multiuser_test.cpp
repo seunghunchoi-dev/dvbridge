@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 #endif
 	qRegisterMetaType<dmr::Dmrd>("dmr::Dmrd");
 	if (argc < 3) { std::printf("usage: multiuser_test <fake_master.py> <plugins dir>\n"); return 2; }
-	const QString mlog = QDir::tempPath() + "/dmrbridge_multi_master.log";
+	const QString mlog = QDir::tempPath() + "/dvbridge_multi_master.log";
 	QFile::remove(mlog);
 	QProcess master;
 	master.start("python", {"-I", QString::fromLocal8Bit(argv[1]), "40", "62091", "local", mlog});

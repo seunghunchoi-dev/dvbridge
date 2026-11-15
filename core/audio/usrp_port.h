@@ -6,7 +6,7 @@
 //   ※ DVSwitch Mobile(안드로이드)은 type 칸만 리틀엔디안으로 보냄 → 자동 인식, 같은 순서로 응답 (2026-11-14 실기 확인)
 //   제어(공개 형식 기준 자체 작성): TEXT "REG:DVSWITCH"→"REG:OK", "INFO:"→"INFO:{json}", DTMF "450"/"450#"/"#450"/"*DMR",
 //         TLV REMOTE_CMD "txTg=…" "txTs=…", PING, 수신 시작 시 SET_INFO
-//         DMRBridge 클라이언트 전용(type 빅엔디안): TEXT "CLIENT:{json}" 내 정보 수신, "INFO:CALL:{json}" 상대방 정보 송신
+//         DVBridge 클라이언트 전용(type 빅엔디안): TEXT "CLIENT:{json}" 내 정보 수신, "INFO:CALL:{json}" 상대방 정보 송신
 //   앱 설정 배치: 앱 "TX Port"(기본 32001) = 이 포트, 앱 "Port"(34001) = 앱이 받는 포트(첫 패킷 보낸 곳으로 자동 응답)
 //
 // 송신 안전장치: TOT 초과 → PTT 해제 + 클라이언트가 PTT를 놓을 때까지 재송신 금지 / 패킷 1초 끊김 → PTT 해제
@@ -55,7 +55,7 @@ public:
 	void send_call_info(quint32 src, quint32 rptr, quint32 dst, int slot, int cc, bool priv, const QString &call);
 	void send_info(int tg, bool priv, int ts);		// INFO json
 	void send_message(const QString &text);			// INFO:MSG:… (앱 알림)
-	void send_call_detail(const QJsonObject &o);	// INFO:CALL:{json} 상대방 정보 (DMRBridge 클라이언트만)
+	void send_call_detail(const QJsonObject &o);	// INFO:CALL:{json} 상대방 정보 (DVBridge 클라이언트만)
 
 signals:
 	void ptt_changed(bool keyed);

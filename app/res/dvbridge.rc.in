@@ -1,4 +1,4 @@
-// DMRBridge 실행 파일 리소스: 아이콘(IDI_ICON1 = Qt 기본 창 아이콘) + 버전 정보
+// DVBridge 실행 파일 리소스: 아이콘(IDI_ICON1 = Qt 기본 창 아이콘) + 버전 정보
 IDI_ICON1 ICON "@ICON_PATH@"
 
 1 VERSIONINFO
@@ -14,13 +14,13 @@ BEGIN
   BEGIN
     BLOCK "041204b0"
     BEGIN
-      VALUE "CompanyName", "DMRBridge"
-      VALUE "FileDescription", "DMRBridge - DMR master / DVSwitch Mobile bridge"
+      VALUE "CompanyName", "DVBridge"
+      VALUE "FileDescription", "DVBridge - DMR master / DVSwitch Mobile bridge"
       VALUE "FileVersion", "@PROJECT_VERSION@"
-      VALUE "InternalName", "DMRBridge"
+      VALUE "InternalName", "DVBridge"
       VALUE "LegalCopyright", "Copyright (c) 2026 Choi Seunghun (6K2KZR), MIT License"
-      VALUE "OriginalFilename", "DMRBridge.exe"
-      VALUE "ProductName", "DMRBridge"
+      VALUE "OriginalFilename", "DVBridge.exe"
+      VALUE "ProductName", "DVBridge"
       VALUE "ProductVersion", "@PROJECT_VERSION@"
     END
   END

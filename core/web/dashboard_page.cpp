@@ -8,7 +8,7 @@ QByteArray DashboardServer::page_html()
 {
 	return QByteArray(R"HTML(<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DMRBridge 대시보드</title>
+<title>DVBridge 대시보드</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAIMElEQVR4nK1Xa3BV1RX+9t7nPpObdwhJjAkPKy+LTrFSDA8diwpMARWYkaEtLT5mai390Rn7GBns+MMf/qD+sC2MiqUWcCCU2JaxUlqBykzrDwaQ8khCQh5AAjfJzb0355z96Kx9bp4EOmrXZM2c7LvOXmuv9a1v7cOQE7NlC2dbt2p67n26vpj5fIavRUJBAgYMX0QYjICDEDAAxc8VHjh8nZb3rlkj1r7/vgpMRjk/t3x+dVk08jMYs1IB1YJ9Mb/jRRkDzlgXBxqTrnx12gfH24Z8sqGHtlULv57H2YE8R1T2+QpSaxg6+/9BGMAczlEQEkj7qjvtqydqPzh+zPreAvCNqxdWhJQ+GRWifEAqH4DDWC7tFALngKFwTC5ntxGyp8yRaj1sb4z9RcYdEfK1TmqwudV/PNrOt5KZJ19OOE55n+f7xpiQNoYpbUBKoJCDg1C+D21g126n2hhrKwez9t1R64z2Tnm+nydEsSflKwwwrHV5fbFv5LkQ52W+tmgbitme3LguQnfUQg+koFJ9YMIJMjFhrhmMkhCJQoiCQnhtzWCRaJCJkYQaSq/UuheSzeBZLWfBoNxVimmjmTIagQLS82Hieaje9hYS31oDP5WygLKqh+x07jlYJ5v8x1eh+lfvAIlCSNcDwX3Ilny4SoEzFMNRcziUSlBcUhszJpWMwU/1o/R7PwATIdxo2A3E4tBcBOUAg2Y8ULBgTQggnocbB/bAKIWyZzbDH0gFv48tk0WEq1DAfQ2jaXG00uldF7ykHEWPr0bP7rcxcOYUCpatRt0b70A7IUjPg5e8AffGDftMgdVtextFK9ciff4sunftQMHSFRCTKiEHXbvneD9SKcMVVBDZUGpNADw/k0V01j1goRCShw+BlZSifMMzcNsvW8eIxlD+/RdQ8eyL9tRebxLZliaUrd8EXlaB5JEPwThHdM698DOZAJCjfJBPEkdKwHGojiN0xxiD8jyEa6dCZTPIXG5FpG4aQmWT0Lrv5/DTadz5yusoWbrC2kfqpuPC5k3o3vceih5+FOGpdyF74T9QqX5E6qZC+h4YZd2CMRDFAaUUHPpnKCUjAQQgY+EIDLWU6yIajVv0E8hMOIJwdY1FPEm4qgaIRG29yYbF8iz4tO8B4Si00nZ/kzu1DQDGgpMrJaHUBD0NwO25BhHPA0sUItPZbtss+pWZcPv6kLl43rYkafriObi9vYhMu9vaZDvawBIJiPwE3O5rUONAOKwK4HJ8bUiVgnHC6D9zCsxxEJ/9VaSbLyJ5/O+449kXEblzCkqXrkD3oUZcbdiD0qXLbIlqnv8R+v59AqkL5xCbeQ94OIL+0ydhHGdMqwaqIUElkApawDLYCMsym9L+s2eQbbuEynXfxpXGBlx6cxvyZ85G/n3zIGIxXG3cD5lOoWL1OhQ8sACtv30D6Yvn4bsuKtdugNvVgb7TJyGiMShJOR0pAbUmpdmhDPBcF4wEYMCEgJQSTdtew5zX30TV+o3oOrgP1//5MebueA9+bxI9nxyF9ly4165g0oon8en6lRB5+ahctwGlD30Tn/10s8UPi8ZgtJ2+ozAQqBOw1PgAaABI8LwErv71EIr2/M4SjlIa0el3o3TBYqQvNaO4fokF3WBnB4rmPYD4jDnItDTBiBA69v0BXX8+CCc/YQ8yXohpKSu2DQW/OYDgWYHF4zj76ssWC1SmwvvmgUejlh+mb34px//KZqzo/vlINV9E118OorNxP0QsboOeaHIMZwDUBeDjMDBmwlgKBheQ6Qwqlq2ETKdxYv0TUJk0iNSpE5Z89AkmL1+N1t27IGgAhQLQ3WpwEQYkzYTRJZhYg2HjZzMIV0xG2YJF6PrwT0hf6YQJhW26sz096GhsQPHX5iFSXQOPmM+22njkj1MMteH/mvFg8NJplMyvBw+FcO3YPxCZXAWnuBROcQkiVdXoPnEcjHGULVwCbyA95i5wS1WWiiUEF7cpQY4ZDVD1WEC9s37yC7CXxBibIVasfGwFmn6/E1Jp6u1b7EgloAhVQMXBrL5FAASywSwikysxqX4x2g424NRrv0S4uNiCz5oIAS+ZxMwXfowpa59GrKbWMidhwZgR/h8tSrEhKla3uV4BECFb0/IHF4GHw2jZvwepy63ov9Qyoi3NSLVfRsv+vTaYisUPw8tmYQR1zsQ0LC0GFHGQYTfdB3LOaZPM9R4M9qdQu/IpZK50ov1vH1lOcAfS9ndSN522F5jOYx+jv6UJtauegpfJItPTHQBygruABak0zPGhB4xmZBRUwF5oGWQmg9K592L28z8Ed0Ko+MaDGLzeg0Xb37WZuKm9GIN2XTjRGAqmTMMjew7YkX52x6/R/em/4MTiQTmCuz4Do0uRSTkhmM9crXscxkqDvgWjvvbdQeRPmYaaR5cFIJMS0bLy4f9vJ1pKVD30iH1uP3IYHcePglEAwX3ACDC4WveJsHPannrnXTXbCwTf1C+1zxh9SeWQrRXik6vAHcfebuyZLaffql/oJk3b07saWilkujrtu8MWBn7C4aGU0ru+c+HyBkbp2D69ujoCnHQYL3G19ulDxl7PaWC53pgp9vmEQUSoXMN/Msx5SGvTr6SY+93W1lYKgNM3zG+mVtZHwRsinJdlicFyd3hOJPAlhEBOh6EcxDmHa3RyEHjyuaaOI/bLg5zT59lzzV3HUlrNy0r5ltLmGuVK0Mta8y+jtAftpbXpziq9s9fz7ifnewFBvoeLSQtrgwGF7VMmVUCzmZqJgmCFmMt87k9lTlAXgDAsJeCd3djafWW8r/8CGo7ECkGUzXgAAAAASUVORK5CYII=">
 <style>
 :root{--bg:#f4f5f7;--card:#fff;--fg:#1d2330;--mut:#6b7280;--line:#e5e7eb;--tx:#c0392b;--rx:#1e8449;--acc:#d35400;--off:#9ca3af;color-scheme:light}
@@ -51,7 +51,7 @@ button.ls.on{background:var(--rx);color:#fff;border-color:var(--rx)}
 .net{font-size:11px;border-radius:4px;padding:0 5px;margin-left:4px;color:#fff;background:var(--mut)}.net.ext{background:#2471a3}.net.int{background:var(--rx)}
 .tile .ft{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mut)}
 </style></head><body>
-<header><b>DMRBridge</b><span><a href="/settings" style="color:#fff;font-size:13px;margin-right:10px">설정</a><small id="clock"></small><button class="th" id="theme" onclick="cycleTheme()" title="화면 테마: 자동(Windows 설정) / 밝게 / 어둡게">자동</button></span></header>
+<header><b>DVBridge</b><span><a href="/settings" style="color:#fff;font-size:13px;margin-right:10px">설정</a><small id="clock"></small><button class="th" id="theme" onclick="cycleTheme()" title="화면 테마: 자동(Windows 설정) / 밝게 / 어둡게">자동</button></span></header>
 <main>
 <div class="stats" id="stats"></div>
 <h2>사용자 <span class="vt">보기<button id="vCard" onclick="setView('card')">카드</button><button id="vTable" onclick="setView('table')">표</button></span></h2>
@@ -63,15 +63,15 @@ button.ls.on{background:var(--rx);color:#fff;border-color:var(--rx)}
 <h2>송수신 이력 (Last Heard)</h2>
 <div class="tbl"><table><thead><tr><th>시각</th><th>사용자</th><th>방향</th><th>송신자</th><th>대상</th><th>슬롯</th><th>길이</th></tr></thead>
 <tbody id="rows"><tr><td colspan="7">이력 없음</td></tr></tbody></table></div>
-<footer>DMRBridge — 최초 제작: 최승훈 (6K2KZR) · MIT License · 설정 변경은 [설정]에서 관리자 로그인</footer>
+<footer>DVBridge — 최초 제작: 최승훈 (6K2KZR) · MIT License · 설정 변경은 [설정]에서 관리자 로그인</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 // ---- 화면 테마 (자동 / 밝게 / 어둡게), 브라우저에 기억 ----
 const THEMES=['auto','light','dark'],THEME_NAME={auto:'자동',light:'밝게',dark:'어둡게'};
 function applyTheme(t){if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);const b=$('theme');if(b)b.textContent='테마: '+THEME_NAME[t];}
-function loadTheme(){try{const t=localStorage.getItem('dmrbridge-theme');return THEMES.includes(t)?t:'auto'}catch(e){return 'auto'}}
-function cycleTheme(){const t=THEMES[(THEMES.indexOf(loadTheme())+1)%3];try{localStorage.setItem('dmrbridge-theme',t)}catch(e){}applyTheme(t);}
+function loadTheme(){try{const t=localStorage.getItem('dvbridge-theme');return THEMES.includes(t)?t:'auto'}catch(e){return 'auto'}}
+function cycleTheme(){const t=THEMES[(THEMES.indexOf(loadTheme())+1)%3];try{localStorage.setItem('dvbridge-theme',t)}catch(e){}applyTheme(t);}
 applyTheme(loadTheme());
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dst(r){if(r.kind==='notice')return '휴대폰';if(r.kind==='intercom')return '내부 채널 '+esc(r.dst);return r.priv?esc(r.dst)+'<span class="tag">개인</span>':'TG '+esc(r.dst)}
@@ -120,9 +120,9 @@ function render(){
  if(!last)return;const s=last,us=s.users||[],sv=s.server||{};
  const conn=us.filter(u=>u.connected).length,act=us.filter(u=>u.enabled).length;
  $('stats').innerHTML=
-  st('CPU · DMRBridge',(sv.proc_cpu??0)+'%',sv.proc_cpu??0)+
+  st('CPU · DVBridge',(sv.proc_cpu??0)+'%',sv.proc_cpu??0)+
   st('CPU · PC 전체',(sv.sys_cpu??0)+'%',sv.sys_cpu??0)+
-  st('메모리 · DMRBridge',(sv.proc_mem_mb??0)+' MB',null)+
+  st('메모리 · DVBridge',(sv.proc_mem_mb??0)+' MB',null)+
   st('메모리 · PC 전체',(sv.sys_mem_pct??0)+'% / '+(sv.sys_mem_gb??0)+' GB',sv.sys_mem_pct??0)+
   st('가동 시간',upt(sv.uptime_s||0),null)+
   st('접속 사용자',conn+' / '+act,act?conn*100/act:0)+
@@ -146,8 +146,8 @@ function render(){
 }
 // ---- 한눈에 보기: 요약 + 사용자 카드 ----
 let hist=[];
-function setView(v){try{localStorage.setItem('dmrbridge-view',v)}catch(e){}applyView();}
-function view(){try{return localStorage.getItem('dmrbridge-view')==='table'?'table':'card'}catch(e){return 'card'}}
+function setView(v){try{localStorage.setItem('dvbridge-view',v)}catch(e){}applyView();}
+function view(){try{return localStorage.getItem('dvbridge-view')==='table'?'table':'card'}catch(e){return 'card'}}
 function applyView(){const v=view();$('tiles').style.display=v==='card'?'':'none';$('tblWrap').style.display=v==='table'?'':'none';$('vCard').className=v==='card'?'on':'';$('vTable').className=v==='table'?'on':'';}
 function devTag(u){const c=u.client_info;if(!c)return '';const t=[c.device,c.call].filter(x=>x).join(' · ');return t?' <span class="mut" title="'+esc(c.app||'')+'">'+esc(t)+'</span>':''}
 function netTag(k){return k?'<span class="net '+(k==='외부망'?'ext':k==='내부망'?'int':'')+'">'+esc(k)+'</span>':''}
@@ -177,7 +177,7 @@ async function tick(){
   const h=await (await fetch('/api/history',{cache:'no-store'})).json();
   hist=h;
   $('rows').innerHTML=h.length?h.map(r=>'<tr class="'+(r.kind==='unlink'?'unlink':'')+'"><td>'+t(r.start)+'</td><td>'+esc(r.via||'')+'</td><td><span class="dir '+r.dir+'">'+r.dir+'</span>'+(r.kind==='unlink'?'<span class="tag">Unlink</span>':r.kind==='notice'?'<span class="tag">공지</span>':r.kind==='intercom'?'<span class="tag">내부</span>':'')+'</td><td>'+src(r)+'</td><td>'+dst(r)+'</td><td>TS'+esc(r.slot)+'</td><td>'+dur(r.dur)+'</td></tr>').join(''):'<tr><td colspan="7">이력 없음</td></tr>';
- }catch(e){$('users').innerHTML='<tr><td colspan="6">DMRBridge에 연결할 수 없음</td></tr>';}
+ }catch(e){$('users').innerHTML='<tr><td colspan="6">DVBridge에 연결할 수 없음</td></tr>';}
 }
 tick();setInterval(tick,1000);
 </script></body></html>)HTML");

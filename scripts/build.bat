@@ -1,5 +1,5 @@
 @echo off
-rem DMRBridge build + tests (local only, no internet). Keep this file ASCII.
+rem DVBridge build + tests (local only, no internet). Keep this file ASCII.
 rem Build via junction C:\dev\DMR (non-ASCII path issue with Qt tools).
 setlocal
 set ROOT=C:\dev\DMR\dmrbridge
@@ -14,7 +14,7 @@ if "%PLUG%"=="" set PLUG=%B%\plugins
 cmake -S "%ROOT%" -B "%B%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%QTDIR%" ^
   -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ || exit /b 1
 cmake --build "%B%" || exit /b 1
-windeployqt --no-translations "%B%\DMRBridge.exe" >nul
+windeployqt --no-translations "%B%\DVBridge.exe" >nul
 rem tests\oracle (captured reference packets) is local only - without it the black-box part is skipped
 set ORACLE=
 if exist "%ROOT%\tests\oracle\dmrd_group.hex" set ORACLE=%ROOT%\tests\oracle

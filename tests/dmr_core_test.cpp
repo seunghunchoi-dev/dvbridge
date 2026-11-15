@@ -171,11 +171,11 @@ static void talker_alias_tests()
 	CHECK(talker_alias_encode("ABCDEFGH").size() == 2, "TA 8자 = 머리+블록1");
 	CHECK(talker_alias_encode(std::string(23, 'X')).size() == 3, "TA 23자 = 3개");
 	CHECK(talker_alias_encode(std::string(40, 'X')).size() == 4, "TA 31자 넘으면 4개로 자름");
-	const std::string t = "HL0ABC DMRBridge Galaxy A17";
+	const std::string t = "HL0ABC DVBridge Galaxy A17";
 	auto pdus = talker_alias_encode(t);
-	CHECK(pdus.size() == 4, "TA 27자 = 4개");
+	CHECK(pdus.size() == 4, "TA 26자 = 4개");
 	CHECK((pdus[0][0] & 0x3F) == 4 && (pdus[1][0] & 0x3F) == 5 && (pdus[3][0] & 0x3F) == 7 && pdus[0][1] == 0, "TA FLCO 4~7, FID 0");
-	CHECK(((pdus[0][2] >> 6) & 3) == 0 && ((pdus[0][2] >> 1) & 0x1F) == 27, "TA 머리: 형식 7비트, 길이 27");
+	CHECK(((pdus[0][2] >> 6) & 3) == 0 && ((pdus[0][2] >> 1) & 0x1F) == 26, "TA 머리: 형식 7비트, 길이 26");
 	// 첫 글자 'H'(1001000)는 머리 23번째 비트부터
 	CHECK((pdus[0][2] & 1) == 1 && (pdus[0][3] >> 2) == 0x08, "TA 머리 첫 글자 비트 위치");
 	TalkerAliasRx rx;

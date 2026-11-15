@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 	const quint16 port = web.port();
 
 	const QByteArray page = http(port, "GET / HTTP/1.1\r\nHost: x\r\n\r\n");
-	CHECK(page.startsWith("HTTP/1.1 200") && page.contains("DMRBridge") && page.contains("최초 제작"), "GET / → 대시보드 페이지 (제작자 표기 포함)");
+	CHECK(page.startsWith("HTTP/1.1 200") && page.contains("DVBridge") && page.contains("최초 제작"), "GET / → 대시보드 페이지 (제작자 표기 포함)");
 	const QByteArray hist = http(port, "GET /api/history HTTP/1.1\r\n\r\n");
 	const QJsonArray arr = QJsonDocument::fromJson(hist.mid(hist.indexOf("\r\n\r\n") + 4)).array();
 	CHECK(arr.size() == 3 && arr[0].toObject()["kind"].toString() == "unlink", "GET /api/history → 3건, 최신순");
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 		web.set_admin_hooks(h);
 		auto post = [&](const QByteArray &path, const QByteArray &json, const QByteArray &cookie = QByteArray(), bool csrf = true) {
 			QByteArray req = "POST " + path + " HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: " + QByteArray::number(json.size()) + "\r\n";
-			if (csrf) req += "X-DMRBridge: 1\r\n";
+			if (csrf) req += "X-DVBridge: 1\r\n";
 			if (!cookie.isEmpty()) req += "Cookie: " + cookie + "\r\n";
 			return http(port, req + "\r\n" + json);
 		};
@@ -132,12 +132,12 @@ int main(int argc, char **argv)
 			return http(port, "GET " + path + " HTTP/1.1\r\n" + (cookie.isEmpty() ? QByteArray() : "Cookie: " + cookie + "\r\n") + "\r\n");
 		};
 		auto cookie_of = [](const QByteArray &resp) {
-			const int i = resp.indexOf("dmrb_session=");
+			const int i = resp.indexOf("dvb_session=");
 			return i < 0 ? QByteArray() : resp.mid(i, resp.indexOf(';', i) - i);
 		};
 		CHECK(get("/settings").startsWith("HTTP/1.1 200") && get("/settings").contains("관리자"), "GET /settings → 설정 페이지");
 		CHECK(get("/api/admin/state").contains("\"has_password\":false") && get("/api/admin/state").contains("\"local\":true"), "처음: 관리자 비밀번호 없음, 이 PC에서 접속");
-		CHECK(post("/api/admin/setup", "{\"password\":\"abcdef\"}", QByteArray(), false).startsWith("HTTP/1.1 403"), "X-DMRBridge 머리 없는 POST 거부 (요청 위조 차단)");
+		CHECK(post("/api/admin/setup", "{\"password\":\"abcdef\"}", QByteArray(), false).startsWith("HTTP/1.1 403"), "X-DVBridge 머리 없는 POST 거부 (요청 위조 차단)");
 		CHECK(post("/api/admin/setup", "{\"password\":\"abc\"}").startsWith("HTTP/1.1 400"), "짧은 관리자 비밀번호 거부");
 		const QByteArray setup = post("/api/admin/setup", "{\"password\":\"secret77\"}");
 		const QByteArray c1 = cookie_of(setup);
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 		const QByteArray out = post("/api/admin/logout", "{}", c2);
 		CHECK(out.contains("Max-Age=0") && get("/api/admin/config", c2).startsWith("HTTP/1.1 401"), "로그아웃하면 쿠키 무효");
 		// 본문 길이를 64KB 넘게 선언하면 본문을 받기 전에 거부 (본문을 실제로 다 보내면 시험 쪽 소켓이 먼저 끊겨 응답을 못 읽음)
-		const QByteArray big = http(port, "POST /api/admin/login HTTP/1.1\r\nX-DMRBridge: 1\r\nContent-Length: " + QByteArray::number(DashboardServer::kMaxBody + 10) + "\r\n\r\n");
+		const QByteArray big = http(port, "POST /api/admin/login HTTP/1.1\r\nX-DVBridge: 1\r\nContent-Length: " + QByteArray::number(DashboardServer::kMaxBody + 10) + "\r\n\r\n");
 		CHECK(big.startsWith("HTTP/1.1 413"), "64KB 넘는 요청 거부");
 		CHECK(get("/").contains("/settings"), "대시보드에 설정 링크");
 	}

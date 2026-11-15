@@ -22,7 +22,7 @@ void IdDbUpdater::start(const QString &dest, const QString &url)
 		return;
 	}
 	QNetworkRequest req{QUrl(url)};
-	req.setHeader(QNetworkRequest::UserAgentHeader, "DMRBridge");	// 개인정보 없이 프로그램 이름만
+	req.setHeader(QNetworkRequest::UserAgentHeader, "DVBridge");	// 개인정보 없이 프로그램 이름만
 	req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
 	req.setTransferTimeout(60000);
 	reply_ = nam_->get(req);

@@ -72,7 +72,7 @@ void DashboardServer::on_new_connection()
 			if (q >= 0) { r.query = r.path.mid(q + 1); r.path = r.path.left(q); }
 			r.body = all.mid(he + 4, len);
 			r.cookie = header_value(head, "cookie");
-			r.csrf_ok = header_value(head, "x-dmrbridge") == "1";
+			r.csrf_ok = header_value(head, "x-dvbridge") == "1";
 			r.local = s->peerAddress().isLoopback();
 			r.peer = s->peerAddress().toString();
 			handle(s, r);
@@ -108,7 +108,7 @@ bool DashboardServer::logged_in(const Request &r)
 	for (auto it = sessions_.begin(); it != sessions_.end();) it = it.value() < now ? sessions_.erase(it) : std::next(it);
 	for (const QByteArray &part : r.cookie.split(';')) {
 		const QByteArray kv = part.trimmed();
-		if (kv.startsWith("dmrb_session=") && sessions_.contains(kv.mid(13))) return true;
+		if (kv.startsWith("dvb_session=") && sessions_.contains(kv.mid(12))) return true;
 	}
 	return false;
 }
@@ -119,7 +119,7 @@ QByteArray DashboardServer::new_session()
 	QRandomGenerator::system()->fillRange(reinterpret_cast<quint32 *>(raw.data()), 8);
 	const QByteArray tok = raw.toHex();
 	sessions_.insert(tok, QDateTime::currentMSecsSinceEpoch() + kSessionMs);
-	return "Set-Cookie: dmrb_session=" + tok + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200\r\n";
+	return "Set-Cookie: dvb_session=" + tok + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200\r\n";
 }
 
 void DashboardServer::handle_admin(QTcpSocket *s, const Request &r)
@@ -145,7 +145,7 @@ void DashboardServer::handle_admin(QTcpSocket *s, const Request &r)
 	}
 	if (r.method == "GET" && r.path == "/api/admin/backup") {
 		if (!logged_in(r)) { reply_json(s, 401, QJsonObject{{"ok", false}, {"message", "로그인이 필요합니다"}}); return; }
-		const QByteArray name = "DMRBridge-backup-" + QDateTime::currentDateTime().toString("yyyyMMdd-HHmm").toLatin1() + ".ini";
+		const QByteArray name = "DVBridge-backup-" + QDateTime::currentDateTime().toString("yyyyMMdd-HHmm").toLatin1() + ".ini";
 		reply(s, 200, "application/octet-stream", admin_.backup ? admin_.backup() : QByteArray(),
 			  "Content-Disposition: attachment; filename=\"" + name + "\"\r\n");
 		return;
@@ -164,7 +164,7 @@ void DashboardServer::handle_admin(QTcpSocket *s, const Request &r)
 
 	if (r.path == "/api/admin/setup") {
 		if (has) { bad(409, "이미 관리자 비밀번호가 있습니다"); return; }
-		if (!r.local) { bad(403, "처음 관리자 비밀번호는 DMRBridge가 실행 중인 PC에서 정해 주세요 (http://localhost)"); return; }
+		if (!r.local) { bad(403, "처음 관리자 비밀번호는 DVBridge가 실행 중인 PC에서 정해 주세요 (http://localhost)"); return; }
 		const QString pw = body["password"].toString();
 		if (pw.size() < kMinPassword) { bad(400, QString("비밀번호는 %1자 이상").arg(kMinPassword)); return; }
 		if (admin_.set_password) admin_.set_password(pw);
@@ -188,9 +188,9 @@ void DashboardServer::handle_admin(QTcpSocket *s, const Request &r)
 	if (r.path == "/api/admin/logout") {
 		for (const QByteArray &part : r.cookie.split(';')) {
 			const QByteArray kv = part.trimmed();
-			if (kv.startsWith("dmrb_session=")) sessions_.remove(kv.mid(13));
+			if (kv.startsWith("dvb_session=")) sessions_.remove(kv.mid(12));
 		}
-		reply_json(s, 200, QJsonObject{{"ok", true}}, "Set-Cookie: dmrb_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0\r\n");
+		reply_json(s, 200, QJsonObject{{"ok", true}}, "Set-Cookie: dvb_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0\r\n");
 		return;
 	}
 	if (r.path == "/api/admin/action") {

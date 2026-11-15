@@ -323,7 +323,7 @@ void Session::on_dmrd(dmr::Dmrd p)
 			emit call_started(rx_rec_);
 			// 휴대폰 앱 화면에 송신자 표시 (콜사인을 알면 콜사인)
 			usrp_->send_call_info(e.lc.src, p.rptr, e.lc.dst, e.slot, cfg_.cc, e.lc.is_private(), rx_rec_.src_call);
-			{	// DMRBridge 클라이언트용 상대방 정보 (이름·지역 포함)
+			{	// DVBridge 클라이언트용 상대방 정보 (이름·지역 포함)
 				QJsonObject d{{"src", qint64(e.lc.src)}, {"call", rx_rec_.src_call}, {"name", rx_rec_.src_name},
 							  {"dst", qint64(e.lc.dst)}, {"priv", e.lc.is_private()}, {"slot", e.slot}};
 				if (ids_) if (const IdDatabase::Info *i = ids_->find(e.lc.src)) d["loc"] = i->loc;
@@ -410,7 +410,7 @@ QString Session::make_description(const QString &device)
 	QString clean;
 	for (QChar ch : d) if (ch.unicode() >= 0x20 && ch.unicode() < 0x7F) clean += ch;	// RPTC는 ASCII 고정폭
 	clean = clean.simplified();
-	return (clean.isEmpty() ? QString("DMRBridge") : "DMRBridge " + clean).left(19);
+	return (clean.isEmpty() ? QString("DVBridge") : "DVBridge " + clean).left(19);
 }
 
 void Session::on_client_info(const QJsonObject &o)
@@ -481,9 +481,9 @@ QString Session::make_location(const QString &device)
 	QString dev;
 	for (QChar ch : device) if (ch.unicode() >= 0x20 && ch.unicode() < 0x7F) dev += ch;	// RPTC는 ASCII 고정폭
 	dev = dev.simplified();
-	if (dev.isEmpty()) return "DMRBridge";
-	QString t = "DMRBridge " + dev;
-	if (t.size() > 20 && dev.startsWith("Galaxy ", Qt::CaseInsensitive)) t = "DMRBridge " + dev.mid(7).trimmed();
+	if (dev.isEmpty()) return "DVBridge";
+	QString t = "DVBridge " + dev;
+	if (t.size() > 20 && dev.startsWith("Galaxy ", Qt::CaseInsensitive)) t = "DVBridge " + dev.mid(7).trimmed();
 	return t.left(20);
 }
 
@@ -496,10 +496,10 @@ QString Session::make_talker_alias(const QString &callsign, const QString &devic
 	};
 	const QString call = ascii(callsign.toUpper());
 	QString dev = ascii(device);
-	QString t = (call.isEmpty() ? QString() : call + " ") + "DMRBridge" + (dev.isEmpty() ? QString() : " " + dev);
+	QString t = (call.isEmpty() ? QString() : call + " ") + "DVBridge" + (dev.isEmpty() ? QString() : " " + dev);
 	if (t.size() > 31 && dev.startsWith("Galaxy ", Qt::CaseInsensitive)) {
 		dev = dev.mid(7);
-		t = (call.isEmpty() ? QString() : call + " ") + "DMRBridge " + dev;
+		t = (call.isEmpty() ? QString() : call + " ") + "DVBridge " + dev;
 	}
 	return t.left(31);
 }
@@ -616,7 +616,7 @@ void Session::notice_begin()
 		return;
 	}
 	const QString label = notice_label(c.ai);
-	// 휴대폰 화면 이름표 + DMRBridge 클라이언트용 상세 정보
+	// 휴대폰 화면 이름표 + DVBridge 클라이언트용 상세 정보
 	usrp_->send_call_info(cfg_.dmr_id, 0, cfg_.dmr_id, cfg_.slot, cfg_.cc, true, label);
 	QJsonObject d{{"notice", true}, {"src", qint64(cfg_.dmr_id)}, {"dst", qint64(cfg_.dmr_id)}, {"priv", true}, {"slot", cfg_.slot},
 				  {"call", label}, {"name", c.title}, {"source", c.source}};

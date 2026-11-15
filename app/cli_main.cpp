@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)
 //
-// dmrbridge_cli — 설정 파일(INI)로 브릿지 세션 하나를 실행하는 간이 실행기 (화면 버전 전까지 사용)
-// 사용: dmrbridge_cli <설정.ini> [실행 초, 0=무한] [--notice-after <초> "<문장>"]
+// dvbridge_cli — 설정 파일(INI)로 브릿지 세션 하나를 실행하는 간이 실행기 (화면 버전 전까지 사용)
+// 사용: dvbridge_cli <설정.ini> [실행 초, 0=무한] [--notice-after <초> "<문장>"]
 //   --notice-after: 시작 후 <초> 뒤 문장을 음성 합성해 브릿지 공지로 한 번 보냄 (클라이언트 시험용, BM으로는 안 나감)
 //
-// [master]  host, port, id(핫스팟 ID), password(비우면 환경변수 DMRB_PW), callsign, options
+// [master]  host, port, id(핫스팟 ID), password(비우면 환경변수 DVB_PW), callsign, options
 // [user]    dmr_id, tg, private(0/1), slot, cc
 // [usrp]    port(앱의 TX Port, 기본 32001), tot(초, 기본 180)
 // [vocoder] plugins(플러그인 폴더, 비우면 실행파일 옆 plugins)
@@ -30,8 +30,8 @@ int main(int argc, char **argv)
 	SetConsoleOutputCP(CP_UTF8);
 #endif
 	qRegisterMetaType<dmr::Dmrd>("dmr::Dmrd");
-	std::printf("DMRBridge (MIT) - Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)\n");
-	if (argc < 2) { std::printf("usage: dmrbridge_cli <config.ini> [seconds] [--notice-after <seconds> \"<text>\"]\n       dmrbridge_cli --download-ids <저장 경로>\n"); return 2; }
+	std::printf("DVBridge (MIT) - Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)\n");
+	if (argc < 2) { std::printf("usage: dvbridge_cli <config.ini> [seconds] [--notice-after <seconds> \"<text>\"]\n       dvbridge_cli --download-ids <저장 경로>\n"); return 2; }
 	if (QString(argv[1]) == "--download-ids" && argc >= 3) {	// RadioID 명단 받기 (화면의 '명단 받기'와 같은 코드)
 		IdDbUpdater up;
 		int rc = 1;
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 	c.master.port = quint16(ini.value("master/port", 62031).toUInt());
 	c.master.id = ini.value("master/id").toUInt();
 	c.master.password = ini.value("master/password").toString();
-	if (c.master.password.isEmpty()) c.master.password = qEnvironmentVariable("DMRB_PW");
+	if (c.master.password.isEmpty()) c.master.password = qEnvironmentVariable("DVB_PW");
 	c.master.callsign = ini.value("master/callsign").toString();
 	c.master.options = ini.value("master/options").toString();
 	c.name = c.master.callsign;
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 	if (c.plugin_dir.isEmpty()) c.plugin_dir = QCoreApplication::applicationDirPath() + "/plugins";
 
 	if (!c.master.id || !c.dmr_id || c.master.callsign.isEmpty() || c.master.password.isEmpty()) {
-		std::printf("설정 부족: master/id, master/callsign, user/dmr_id, 비밀번호(master/password 또는 DMRB_PW) 필요\n");
+		std::printf("설정 부족: master/id, master/callsign, user/dmr_id, 비밀번호(master/password 또는 DVB_PW) 필요\n");
 		return 2;
 	}
 	Session s(c);

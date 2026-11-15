@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)
 //
-// 설정 저장/불러오기: <실행 파일 폴더>\data\dmrbridge.ini (쓸 수 없으면 %APPDATA%\DMRBridge)
+// 설정 저장/불러오기: <실행 파일 폴더>\data\dvbridge.ini (쓸 수 없으면 %APPDATA%\DVBridge)
 //   data/backup: 저장할 때마다 자동 백업(auto-*, 최근 20개), 수동 백업(backup-*), 복원 직전 백업(before-restore-*)
 //   [users] 배열: 사용자별 세션 설정 (다중 사용자), 비밀번호는 Windows DPAPI(현재 Windows 사용자 전용)로 암호화
 //   [web], [vocoder]: 공통 설정

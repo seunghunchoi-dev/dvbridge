@@ -40,7 +40,7 @@ struct SessionConfig {
 	int unlink_ms = 2200;		// 무음 길이. 2초 이상이라 BM 루프 방지의 "2초 미만" 횟수에 들어가지 않음
 	QString plugin_dir;
 	bool enabled = true;		// 다중 사용자: 전체 시작 때 이 사용자를 켤지
-	// 마지막으로 붙은 클라이언트의 장비명 (예: "Galaxy A17") → BM 위치 칸 "DMRBridge Galaxy A17" (make_location)
+	// 마지막으로 붙은 클라이언트의 장비명 (예: "Galaxy A17") → BM 위치 칸 "DVBridge Galaxy A17" (make_location)
 	QString device;
 	// 장비명이 바뀌어 BM에 다시 접속하는 것은 이 간격(초)에 한 번까지 (첫 반영은 바로). 시험에서 줄여 쓸 수 있음
 	int device_relogin_min_s = 600;
@@ -48,7 +48,7 @@ struct SessionConfig {
 	int intercom_tg = 99;
 };
 
-// DMRBridge 클라이언트가 보낸 내 정보 (표시용 - 서버 설정을 덮어쓰지 않음)
+// DVBridge 클라이언트가 보낸 내 정보 (표시용 - 서버 설정을 덮어쓰지 않음)
 struct ClientInfo {
 	QString call, name, device, app;
 	quint32 dmr_id = 0;
@@ -80,16 +80,16 @@ public:
 	// source: 로그에 붙일 출처 (예: "웹 설정"). 반환: 실패 이유, 성공이면 빈 문자열
 	QString set_target(int tg, bool priv, const QString &source);
 	const ClientInfo &client_info() const { return client_; }
-	// BM RPTC 설명 칸(19자): "DMRBridge" + 장비명(앞의 "Galaxy " 생략, 영문·숫자만), 넘치면 자름
+	// BM RPTC 설명 칸(19자): "DVBridge" + 장비명(앞의 "Galaxy " 생략, 영문·숫자만), 넘치면 자름
 	static QString make_description(const QString &device);
-	// BM RPTC 위치 칸(20자, BM이 실제로 표시하는 칸): "DMRBridge " + 장비명(영문·숫자만), 넘치면 "Galaxy " 빼고, 그래도 넘치면 자름
+	// BM RPTC 위치 칸(20자, BM이 실제로 표시하는 칸): "DVBridge " + 장비명(영문·숫자만), 넘치면 "Galaxy " 빼고, 그래도 넘치면 자름
 	static QString make_location(const QString &device);
-	// 송신 이름표(Talker Alias, 31자): "콜사인 DMRBridge 장비명" (예: "HL0ABC DMRBridge Galaxy A17"), 넘치면 Galaxy 생략 후 자름
+	// 송신 이름표(Talker Alias, 31자): "콜사인 DVBridge 장비명" (예: "HL0ABC DVBridge Galaxy A17"), 넘치면 Galaxy 생략 후 자름
 	static QString make_talker_alias(const QString &callsign, const QString &device);
 
 	// ---- 브릿지 공지: BM과 무관하게 이 사용자의 휴대폰·클라이언트에만 음성(8kHz 16bit)을 보냄 ----
 	//   BM 수신·클라이언트 송신·Unlink 중에는 기다렸다가(BM 우선), 끼어들면 멈췄다가 이어서 보냄
-	//   휴대폰 화면 이름표: "브릿지 공지" (DVSwitch Mobile·DMRBridge 클라이언트 모두 한글 표시)
+	//   휴대폰 화면 이름표: "브릿지 공지" (DVSwitch Mobile·DVBridge 클라이언트 모두 한글 표시)
 	//   source: "tts"(문장 읽기) | "live"(실시간 마이크) | "schedule"(예약)
 	void notice_add(const QString &title, const QString &source, const QVector<int16_t> &pcm8k, bool ai = false);	// ai = AI 음성 모델로 만든 소리
 	void notice_live(const QVector<int16_t> &pcm8k, bool end);	// 실시간 마이크 조각 이어 붙이기 (end = 방송 끝)

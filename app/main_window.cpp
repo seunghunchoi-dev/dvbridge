@@ -41,8 +41,8 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-#ifndef DMRBRIDGE_VERSION
-#define DMRBRIDGE_VERSION "0.1"
+#ifndef DVBRIDGE_VERSION
+#define DVBRIDGE_VERSION "0.1"
 #endif
 
 namespace {
@@ -66,7 +66,7 @@ QString MainWindow::clean_exit_flag() { return QDir(AppSettings::config_dir()).f
 
 MainWindow::MainWindow(bool start_hidden, bool recover, QWidget *parent) : QMainWindow(parent)
 {
-	setWindowTitle("DMRBridge");
+	setWindowTitle("DVBridge");
 	app_ = AppSettings::load();
 	rows_.resize(app_.users.size());
 	QFile::remove(clean_exit_flag());
@@ -78,7 +78,7 @@ MainWindow::MainWindow(bool start_hidden, bool recover, QWidget *parent) : QMain
 	build_ui();
 	build_tray();
 
-	append_log("DMRBridge " DMRBRIDGE_VERSION " - 최초 제작: 최승훈 (6K2KZR), MIT License");
+	append_log("DVBridge " DVBRIDGE_VERSION " - 최초 제작: 최승훈 (6K2KZR), MIT License");
 	append_log("설정 폴더: " + QDir::toNativeSeparators(AppSettings::config_dir()));
 	if (!AppSettings::config_note().isEmpty()) append_log(AppSettings::config_note());
 	if (recover) append_log("와치독: 비정상 종료 뒤 다시 실행했습니다");
@@ -137,7 +137,7 @@ MainWindow::MainWindow(bool start_hidden, bool recover, QWidget *parent) : QMain
 				u["connected"] = r.session->master()->connected();
 				u["client"] = r.session->client_address();
 				u["client_net"] = NetKind::of_text(r.session->client_address());	// 휴대폰이 내부망/외부망 어디서 접속했는지
-				{	const ClientInfo &ci = r.session->client_info();	// 클라이언트가 보낸 내 정보 (DMRBridge 클라이언트)
+				{	const ClientInfo &ci = r.session->client_info();	// 클라이언트가 보낸 내 정보 (DVBridge 클라이언트)
 					if (ci.valid()) u["client_info"] = QJsonObject{{"call", ci.call}, {"dmr_id", qint64(ci.dmr_id)}, {"name", ci.name}, {"device", ci.device}, {"app", ci.app}};
 				}
 				u["short_tx"] = r.session->short_tx_in_window();
@@ -182,7 +182,7 @@ void MainWindow::build_ui()
 	auto *root = new QVBoxLayout(central);
 	root->setSpacing(10);
 
-	auto *title = new QLabel("<b style='font-size:20pt;color:#c0392b'>DMRBridge</b> <span style='color:gray'>" DMRBRIDGE_VERSION "</span>");
+	auto *title = new QLabel("<b style='font-size:20pt;color:#c0392b'>DVBridge</b> <span style='color:gray'>" DVBRIDGE_VERSION "</span>");
 	root->addWidget(title);
 
 	// 서비스 상태 + 큰 켜기/끄기
@@ -247,8 +247,8 @@ void MainWindow::build_ui()
 	// 옵션
 	auto *opt = new QGroupBox("자동 실행·복구");
 	auto *ov = new QVBoxLayout(opt);
-	autostart_ = new QCheckBox("Windows를 켜면 DMRBridge 자동 실행 (트레이로 시작)");
-	auto_service_ = new QCheckBox("DMRBridge가 켜지면 서비스 자동 시작");
+	autostart_ = new QCheckBox("Windows를 켜면 DVBridge 자동 실행 (트레이로 시작)");
+	auto_service_ = new QCheckBox("DVBridge가 켜지면 서비스 자동 시작");
 	watchdog_ = new QCheckBox("와치독 — 접속이 끊기거나 프로그램이 비정상 종료되면 자동 복구");
 	autostart_->setChecked(autostart_enabled());
 	auto_service_->setChecked(app_.auto_service);
@@ -287,7 +287,7 @@ void MainWindow::build_ui()
 
 	connect(service_btn_, &QPushButton::clicked, this, [this] {
 		QString err;
-		if (!set_service(!service_on_, &err) && !err.isEmpty()) QMessageBox::warning(this, "DMRBridge", err);
+		if (!set_service(!service_on_, &err) && !err.isEmpty()) QMessageBox::warning(this, "DVBridge", err);
 	});
 	connect(webset, &QPushButton::clicked, this, [this] { QDesktopServices::openUrl(QUrl(local_url("settings"))); });
 	connect(dash, &QPushButton::clicked, this, [this] { QDesktopServices::openUrl(QUrl(local_url())); });
@@ -311,8 +311,8 @@ void MainWindow::build_ui()
 
 void MainWindow::build_tray()
 {
-	tray_ = new QSystemTrayIcon(QIcon(":/dmrbridge.png"), this);
-	tray_->setToolTip("DMRBridge");
+	tray_ = new QSystemTrayIcon(QIcon(":/dvbridge.png"), this);
+	tray_->setToolTip("DVBridge");
 	auto *menu = new QMenu(this);
 	menu->addAction("열기", this, [this] { showNormal(); raise(); activateWindow(); });
 	menu->addAction("웹 설정 열기", this, [this] { QDesktopServices::openUrl(QUrl(local_url("settings"))); });
@@ -320,7 +320,7 @@ void MainWindow::build_tray()
 	menu->addSeparator();
 	tray_service_ = menu->addAction("서비스 켜기", this, [this] {
 		QString err;
-		if (!set_service(!service_on_, &err) && !err.isEmpty()) tray_->showMessage("DMRBridge", err, QSystemTrayIcon::Warning);
+		if (!set_service(!service_on_, &err) && !err.isEmpty()) tray_->showMessage("DVBridge", err, QSystemTrayIcon::Warning);
 	});
 	menu->addSeparator();
 	menu->addAction("종료", this, &MainWindow::quit_app);
@@ -349,7 +349,7 @@ void MainWindow::refresh_status()
 	service_btn_->setText(service_on_ ? "서비스 끄기" : "서비스 켜기");
 	service_btn_->setStyleSheet(service_on_ ? "QPushButton{background:#c0392b;color:white;border-radius:8px;}" : "QPushButton{background:#1e8449;color:white;border-radius:8px;}");
 	if (tray_service_) tray_service_->setText(service_on_ ? "서비스 끄기" : "서비스 켜기");
-	if (tray_) tray_->setToolTip(service_on_ ? QString("DMRBridge — 서비스 켜짐 (BM 접속 %1명)").arg(conn) : QString("DMRBridge — 서비스 꺼짐"));
+	if (tray_) tray_->setToolTip(service_on_ ? QString("DVBridge — 서비스 켜짐 (BM 접속 %1명)").arg(conn) : QString("DVBridge — 서비스 꺼짐"));
 
 	QString g;
 	if (!AppSettings::has_admin_password(app_)) g = "<b>처음 사용하시나요?</b><br>① 아래 <b>[웹 설정 열기]</b>를 누르세요<br>② 웹 화면에서 <b>관리자 비밀번호</b>를 정하세요<br>③ <b>사용자 추가</b>로 콜사인·DMR ID·핫스팟 비밀번호를 넣은 뒤 <b>[서비스 켜기]</b>";
@@ -417,19 +417,19 @@ void MainWindow::apply_network()
 	const QString bind = bind_->currentData().toString();
 	const int port = port_->value();
 	for (const SessionConfig &c : app_.users)
-		if (c.usrp_port == port) { QMessageBox::warning(this, "DMRBridge", QString("포트 %1은 사용자 %2의 USRP 포트와 겹칩니다.").arg(port).arg(c.master.callsign)); return; }
+		if (c.usrp_port == port) { QMessageBox::warning(this, "DVBridge", QString("포트 %1은 사용자 %2의 USRP 포트와 겹칩니다.").arg(port).arg(c.master.callsign)); return; }
 	app_.web_bind = bind;
 	app_.web_port = quint16(port);
 	AppSettings::save(app_);
 	start_dashboard();
 	refresh_status();
-	if (!web_ok_) QMessageBox::warning(this, "DMRBridge", QString("포트 %1을 열 수 없습니다. 다른 포트를 골라 주세요.").arg(port));
+	if (!web_ok_) QMessageBox::warning(this, "DVBridge", QString("포트 %1을 열 수 없습니다. 다른 포트를 골라 주세요.").arg(port));
 }
 
 void MainWindow::show_about()
 {
-	QMessageBox::about(this, "DMRBridge 정보",
-		"<h3>DMRBridge " DMRBRIDGE_VERSION "</h3>"
+	QMessageBox::about(this, "DVBridge 정보",
+		"<h3>DVBridge " DVBRIDGE_VERSION "</h3>"
 		"<p>DMR 마스터(BrandMeister 등) 접속 + DVSwitch Mobile(USRP) 브릿지, 다중 사용자</p>"
 		"<p><b>최초 제작: 최승훈 (Choi Seunghun, 6K2KZR)</b></p>"
 		"<p>MIT License — 누구나 자유롭게 사용·수정·배포할 수 있으며, "
@@ -455,14 +455,14 @@ void MainWindow::check_vocoder(bool popup)
 	const QStringList dlls = vocoder_plugins();
 	if (!dlls.isEmpty()) { append_log("보코더 플러그인: " + dlls.join(", ")); return; }
 	append_log("경고: 보코더 플러그인이 없습니다 - 음성 없이(무음) 동작합니다. 폴더: " + QDir::toNativeSeparators(dir));
-	if (!popup) { if (tray_) tray_->showMessage("DMRBridge", "보코더 플러그인이 없어 음성이 나오지 않습니다.", QSystemTrayIcon::Warning); return; }
+	if (!popup) { if (tray_) tray_->showMessage("DVBridge", "보코더 플러그인이 없어 음성이 나오지 않습니다.", QSystemTrayIcon::Warning); return; }
 	// 창을 막지 않는 안내 (열려 있어도 서비스 자동 시작·업데이트 종료가 멈추지 않게)
 	auto *box = new QMessageBox(QMessageBox::Warning, "보코더 플러그인 없음",
 		"보코더 플러그인이 없어 DMR 음성을 압축·복원할 수 없습니다. "
 		"이대로 접속하면 송신은 무음, 수신 음성은 들리지 않습니다.\n\n"
-		"DMRBridge에는 보코더가 들어 있지 않습니다. AMBE+2 보코더 플러그인(vocoder_*.dll)은 "
+		"DVBridge에는 보코더가 들어 있지 않습니다. AMBE+2 보코더 플러그인(vocoder_*.dll)은 "
 		"사용하시는 분이 직접 구하시고, 라이선스·특허 조건도 직접 확인해 주세요.\n\n"
-		"구한 파일을 아래 폴더에 넣고 DMRBridge를 다시 시작하면 됩니다.\n\n"
+		"구한 파일을 아래 폴더에 넣고 DVBridge를 다시 시작하면 됩니다.\n\n"
 		+ QDir::toNativeSeparators(dir), QMessageBox::Ok, this);
 	box->setAttribute(Qt::WA_DeleteOnClose);
 	box->setWindowModality(Qt::NonModal);
@@ -477,14 +477,22 @@ void MainWindow::check_vocoder(bool popup)
 
 bool MainWindow::autostart_enabled()
 {
-	return QSettings(kRunKey, QSettings::NativeFormat).contains("DMRBridge");
+	QSettings s(kRunKey, QSettings::NativeFormat);
+	// 예전 이름 시절의 자동 실행 항목 → 새 실행 파일로 바꿈. 같은 폴더에 설치된 것일 때만 (다른 복사본이 가져가지 않게)
+	const QString old = s.value("DMRBridge").toString();
+	const QString here = QDir::toNativeSeparators(QCoreApplication::applicationDirPath()) + "\\";
+	if (!old.isEmpty() && old.contains(here, Qt::CaseInsensitive)) {
+		s.remove("DMRBridge");
+		set_autostart(true);
+	}
+	return QSettings(kRunKey, QSettings::NativeFormat).contains("DVBridge");
 }
 
 void MainWindow::set_autostart(bool on)
 {
 	QSettings s(kRunKey, QSettings::NativeFormat);
-	if (on) s.setValue("DMRBridge", "\"" + QDir::toNativeSeparators(QCoreApplication::applicationFilePath()) + "\" --tray");
-	else s.remove("DMRBridge");
+	if (on) s.setValue("DVBridge", "\"" + QDir::toNativeSeparators(QCoreApplication::applicationFilePath()) + "\" --tray");
+	else s.remove("DVBridge");
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)
@@ -493,7 +501,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 		hide();
 		if (!tray_notice_) {
 			tray_notice_ = true;
-			tray_->showMessage("DMRBridge", "DMRBridge는 계속 실행 중입니다. 작업 표시줄 오른쪽 아이콘에서 열거나 종료할 수 있습니다.");
+			tray_->showMessage("DVBridge", "DVBridge는 계속 실행 중입니다. 작업 표시줄 오른쪽 아이콘에서 열거나 종료할 수 있습니다.");
 		}
 		e->ignore();
 		return;
@@ -506,7 +514,7 @@ void MainWindow::quit_app()
 {
 	if (service_on_) {
 		showNormal(); raise(); activateWindow();
-		if (QMessageBox::question(this, "DMRBridge", "종료하면 무전 연결이 모두 끊깁니다.\n종료할까요?") != QMessageBox::Yes) return;
+		if (QMessageBox::question(this, "DVBridge", "종료하면 무전 연결이 모두 끊깁니다.\n종료할까요?") != QMessageBox::Yes) return;
 	}
 	quit_now();
 }
@@ -773,7 +781,7 @@ QJsonObject MainWindow::web_config() const
 	if (ids_.size()) o["iddb_date"] = ids_.file_time().toString("yyyy-MM-dd");
 	o["iddb_busy"] = id_updater_ && id_updater_->busy();
 	o["iddb_status"] = id_status_;
-	o["version"] = DMRBRIDGE_VERSION;
+	o["version"] = DVBRIDGE_VERSION;
 	o["intercom_tg"] = app_.intercom_tg;
 	if (netcheck_) o["netcheck"] = netcheck_->result();
 	QJsonObject n = NoticeService::sanitize(app_.notice, nullptr);

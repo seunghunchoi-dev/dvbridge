@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)
 //
-// dmrbridge_tts — DMRBridge 음성 팩용 문장 읽기 도우미 (Supertonic 3 모델, ONNX Runtime)
-//   DMRBridge가 공지를 만들 때만 잠깐 실행되고 끝나면 메모리를 모두 돌려줌 (본체는 가볍게 유지)
+// dvbridge_tts — DVBridge 음성 팩용 문장 읽기 도우미 (Supertonic 3 모델, ONNX Runtime)
+//   DVBridge가 공지를 만들 때만 잠깐 실행되고 끝나면 메모리를 모두 돌려줌 (본체는 가볍게 유지)
 //   추론 순서(문장 정리 → 길이 예측 → 문장 인코더 → 흐름 정합 단계 → 보코더)는
 //   supertonic 파이썬 패키지(MIT, Copyright (c) 2025 Supertone Inc.)의 공개 동작을 보고 C++로 다시 작성
 //   모델 파일(Supertone Inc., BigScience Open RAIL-M)은 이 프로그램에 들어 있지 않고 음성 팩에 따로 있음
 //
-// 사용: dmrbridge_tts --model <supertonic3 폴더> --voice F1 --in <문장 UTF-8 파일> --out <8kHz WAV>
+// 사용: dvbridge_tts --model <supertonic3 폴더> --voice F1 --in <문장 UTF-8 파일> --out <8kHz WAV>
 //                     [--speed 1.05] [--steps 8] [--lang ko]
-//       dmrbridge_tts --model <폴더> --list      목소리 이름 목록 (VOICE|이름)
+//       dvbridge_tts --model <폴더> --list      목소리 이름 목록 (VOICE|이름)
 //   onnxruntime.dll 은 이 실행 파일과 같은 폴더에서 불러옴
 #define _USE_MATH_DEFINES
 #include <windows.h>
@@ -319,7 +319,7 @@ int wmain(int argc, wchar_t **argv)
 		else if (a == L"--steps") steps = _wtoi(next().c_str());
 		else if (a == L"--list") list = true;
 	}
-	if (model.empty()) { std::fprintf(stderr, "usage: dmrbridge_tts --model <dir> (--list | --voice F1 --in text.txt --out out.wav)\n"); return 2; }
+	if (model.empty()) { std::fprintf(stderr, "usage: dvbridge_tts --model <dir> (--list | --voice F1 --in text.txt --out out.wav)\n"); return 2; }
 	if (list) {
 		WIN32_FIND_DATAW fd;
 		HANDLE h = FindFirstFileW((model + L"\\voice_styles\\*.json").c_str(), &fd);
@@ -367,7 +367,7 @@ int wmain(int argc, wchar_t **argv)
 	typedef const OrtApiBase *(ORT_API_CALL * GetBase)();
 	GetBase gb = reinterpret_cast<GetBase>(GetProcAddress(ort, "OrtGetApiBase"));
 	if (!gb || !(g_api = gb()->GetApi(ORT_API_VERSION))) { std::fprintf(stderr, "ERROR onnxruntime version\n"); return 1; }
-	if (!ok(g_api->CreateEnv(ORT_LOGGING_LEVEL_ERROR, "dmrbridge_tts", &g_env), "env")) return 1;
+	if (!ok(g_api->CreateEnv(ORT_LOGGING_LEVEL_ERROR, "dvbridge_tts", &g_env), "env")) return 1;
 	if (!ok(g_api->CreateCpuMemoryInfo(OrtArenaAllocator, OrtMemTypeDefault, &g_mem), "mem")) return 1;
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
@@ -395,7 +395,7 @@ int wmain(int argc, wchar_t **argv)
 		std::vector<int64_t> dur_shape, emb_shape;
 		if (!run(dp, {"text_ids", "style_dp", "text_mask"}, {t_ids.v, t_dp.v, t_mask.v}, dur, dur_shape) || dur.empty()) return 1;
 		const double seconds = dur[0] / speed;
-		if (_wgetenv(L"DMRB_TTS_DEBUG")) std::fprintf(stderr, "chunk %zu: chars %zu ids %lld dur %.2f\n", ci, t.size(), (long long)L, seconds);
+		if (_wgetenv(L"DVB_TTS_DEBUG")) std::fprintf(stderr, "chunk %zu: chars %zu ids %lld dur %.2f\n", ci, t.size(), (long long)L, seconds);
 		if (!run(te, {"text_ids", "style_ttl", "text_mask"}, {t_ids.v, t_ttl.v, t_mask.v}, emb, emb_shape)) return 1;
 		const int64_t wav_len = int64_t(seconds * double(sr));
 		const int64_t chunk = base * ccf, lat_len = std::max<int64_t>(1, (wav_len + chunk - 1) / chunk), lat_dim = ldim * ccf;

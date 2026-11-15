@@ -119,7 +119,7 @@ void NetCheck::start(const Input &in, bool lookup_public_ip)
 	{
 		++pending_;
 		QNetworkRequest rq(QUrl("https://radioid.net/"));
-		rq.setHeader(QNetworkRequest::UserAgentHeader, "DMRBridge");
+		rq.setHeader(QNetworkRequest::UserAgentHeader, "DVBridge");
 		rq.setTransferTimeout(8000);
 		QNetworkReply *r = nam_->head(rq);
 		connect(r, &QNetworkReply::finished, this, [this, r] {
@@ -133,7 +133,7 @@ void NetCheck::start(const Input &in, bool lookup_public_ip)
 	if (lookup_public_ip) {
 		++pending_;
 		QNetworkRequest rq(QUrl("https://api.ipify.org"));
-		rq.setHeader(QNetworkRequest::UserAgentHeader, "DMRBridge");
+		rq.setHeader(QNetworkRequest::UserAgentHeader, "DVBridge");
 		rq.setTransferTimeout(8000);
 		QNetworkReply *r = nam_->get(rq);
 		connect(r, &QNetworkReply::finished, this, [this, r] {
@@ -226,7 +226,7 @@ void NetCheck::build_advice()
 		if (web_public) {
 			add("warn", QString("웹 대시보드(포트 %1)가 인터넷 전체에 열려 있습니다. 누구나 대시보드를 보고 실시간으로 들을 수 있습니다.").arg(in_.web_port));
 			if (!in_.admin_password) add("warn", "관리자 비밀번호가 아직 없습니다. 웹 설정에서 먼저 정하세요 (처음 정하기는 이 PC에서만 됩니다).");
-			if (!lan.isEmpty()) add("info", QString("집 안에서만 쓰려면 DMRBridge 프로그램의 [웹 접속 주소]를 '이 주소만: %1'로 바꾸세요.").arg(lan.first()));
+			if (!lan.isEmpty()) add("info", QString("집 안에서만 쓰려면 DVBridge 프로그램의 [웹 접속 주소]를 '이 주소만: %1'로 바꾸세요.").arg(lan.first()));
 		}
 	} else if (outk == "내부망") {
 		add("info", QString("이 PC는 공유기 뒤의 내부망 주소 %1 로 인터넷에 나갑니다. 같은 와이파이의 휴대폰은 Hostname에 %1 을 넣으면 됩니다.").arg(outbound_ip_));
@@ -262,9 +262,9 @@ void NetCheck::build_advice()
 		bool allow = false, block = false;
 		for (const QJsonValue &v : fw["rules"].toArray()) (v.toObject()["action"].toString() == "Allow" ? allow : block) = true;
 		if (!on) add("info", "Windows 방화벽이 꺼져 있어 들어오는 연결을 막지 않습니다 (다른 보안 프로그램이 막을 수는 있습니다).");
-		else if (block && !allow) add("warn", "Windows 방화벽에 DMRBridge 차단 규칙이 있습니다. 휴대폰 접속이 막힙니다. 'Windows 보안 → 방화벽 및 네트워크 보호 → 방화벽에서 앱 허용'에서 DMRBridge를 허용하세요.");
-		else if (!allow) add("warn", "Windows 방화벽이 켜져 있는데 DMRBridge 허용 규칙이 없습니다. 휴대폰·다른 PC 접속이 막힐 수 있습니다. 'Windows 보안 → 방화벽에서 앱 허용'에서 DMRBridge를 허용하세요.");
-		else add("ok", "Windows 방화벽에 DMRBridge 허용 규칙이 있습니다.");
+		else if (block && !allow) add("warn", "Windows 방화벽에 DVBridge 차단 규칙이 있습니다. 휴대폰 접속이 막힙니다. 'Windows 보안 → 방화벽 및 네트워크 보호 → 방화벽에서 앱 허용'에서 DVBridge를 허용하세요.");
+		else if (!allow) add("warn", "Windows 방화벽이 켜져 있는데 DVBridge 허용 규칙이 없습니다. 휴대폰·다른 PC 접속이 막힐 수 있습니다. 'Windows 보안 → 방화벽에서 앱 허용'에서 DVBridge를 허용하세요.");
+		else add("ok", "Windows 방화벽에 DVBridge 허용 규칙이 있습니다.");
 	} else {
 		add("info", "Windows 방화벽 상태를 읽지 못했습니다.");
 	}

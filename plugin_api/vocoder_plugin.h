@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)
  *
- * vocoder_plugin.h — DMRBridge 보코더 플러그인 C ABI (API 버전 2)
+ * vocoder_plugin.h — DVBridge 보코더 플러그인 C ABI (API 버전 2)
  *
  * - 본체는 이 헤더만 알고, AMBE 등 실제 코덱 구현은 별도 DLL에 둔다. (본체에는 코덱이 없음)
  * - DLL 이름 규칙: 실행파일 옆 plugins\vocoder_<name>.dll

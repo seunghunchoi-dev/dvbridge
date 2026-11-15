@@ -36,22 +36,32 @@ bool writable_dir(const QString &d)
 }
 
 // 저장 폴더: 실행 파일 옆 data 폴더 (설치판·포터블판 공통)
-//   - 시험용으로 DMRBRIDGE_CONFIG_DIR 환경변수가 있으면 그 폴더
-//   - data 폴더에 쓸 수 없으면(권한 없음) %APPDATA%\DMRBridge 로 대신 저장
+//   - 시험용으로 DVBRIDGE_CONFIG_DIR 환경변수가 있으면 그 폴더
+//   - data 폴더에 쓸 수 없으면(권한 없음) %APPDATA%\DVBridge 로 대신 저장
+//   - 예전 이름(DMRBridge) 시절 설정 파일 data\dmrbridge.ini 는 dvbridge.ini 로 이름만 바꿔 이어 씀
 //   - 처음 실행할 때 예전 위치(%APPDATA%\DMRBridge)에 설정이 있으면 복사해 옴 (원본은 그대로)
 void init_dir()
 {
 	if (!g_dir.isEmpty()) return;
-	const QString env = qEnvironmentVariable("DMRBRIDGE_CONFIG_DIR");
+	const QString env = qEnvironmentVariable("DVBRIDGE_CONFIG_DIR");
 	if (!env.isEmpty()) { QDir().mkpath(env); g_dir = env; return; }
-	const QString old = QDir(qEnvironmentVariable("APPDATA")).filePath("DMRBridge");
+	const QString old = QDir(qEnvironmentVariable("APPDATA")).filePath("DVBridge");
+	const QString legacy = QDir(qEnvironmentVariable("APPDATA")).filePath("DMRBridge");	// 예전 이름 시절 위치
 	const QString data = QDir(QCoreApplication::applicationDirPath()).filePath("data");
 	if (writable_dir(data)) {
 		g_dir = data;
-		if (!QFile::exists(QDir(data).filePath("dmrbridge.ini")) && QFile::exists(QDir(old).filePath("dmrbridge.ini"))) {
-			for (const char *f : {"dmrbridge.ini", "history.jsonl", "user.csv"})
-				QFile::copy(QDir(old).filePath(f), QDir(data).filePath(f));
-			g_note = QString("예전 설정을 옮겨 왔습니다 (원본: %1)").arg(QDir::toNativeSeparators(old));
+		const QDir dd(data);
+		if (!QFile::exists(dd.filePath("dvbridge.ini")) && QFile::exists(dd.filePath("dmrbridge.ini"))) {
+			QFile::rename(dd.filePath("dmrbridge.ini"), dd.filePath("dvbridge.ini"));
+			QFile::remove(dd.filePath("dmrbridge.lock"));
+		}
+		for (const QString &src : {old, legacy}) {
+			const QString ini = QFile::exists(QDir(src).filePath("dvbridge.ini")) ? "dvbridge.ini" : "dmrbridge.ini";
+			if (QFile::exists(dd.filePath("dvbridge.ini")) || !QFile::exists(QDir(src).filePath(ini))) continue;
+			QFile::copy(QDir(src).filePath(ini), dd.filePath("dvbridge.ini"));
+			for (const char *f : {"history.jsonl", "user.csv"})
+				QFile::copy(QDir(src).filePath(f), dd.filePath(f));
+			g_note = QString("예전 설정을 옮겨 왔습니다 (원본: %1)").arg(QDir::toNativeSeparators(src));
 		}
 	} else {
 		QDir().mkpath(old);
@@ -65,7 +75,7 @@ constexpr int kKeepAuto = 20;	// 자동 백업 보관 개수
 
 QString config_dir() { init_dir(); return g_dir; }
 QString config_note() { init_dir(); return g_note; }
-QString config_path() { return QDir(config_dir()).filePath("dmrbridge.ini"); }
+QString config_path() { return QDir(config_dir()).filePath("dvbridge.ini"); }
 QString backup_dir() { const QString d = QDir(config_dir()).filePath("backup"); QDir().mkpath(d); return d; }
 
 QString backup_now(const QString &dest)
@@ -102,7 +112,7 @@ bool check_backup(const QString &file, int *users, QString *err)
 	QSettings s(file, QSettings::IniFormat);
 	// 형식 오류만 거부 (방금 쓴 파일은 Qt가 접근 상태값을 남기는 경우가 있어 내용으로 판단)
 	if (s.status() == QSettings::FormatError || !(s.childGroups().contains("users") || s.childGroups().contains("web"))) {
-		if (err) *err = "DMRBridge 설정 파일이 아닙니다";
+		if (err) *err = "DVBridge 설정 파일이 아닙니다";
 		return false;
 	}
 	if (users) { *users = s.beginReadArray("users"); s.endArray(); }
@@ -141,7 +151,7 @@ QString protect(const QString &plain)
 	const QByteArray in = plain.toUtf8();
 	DATA_BLOB src{DWORD(in.size()), reinterpret_cast<BYTE *>(const_cast<char *>(in.constData()))};
 	DATA_BLOB out{};
-	if (!CryptProtectData(&src, L"DMRBridge", nullptr, nullptr, nullptr, CRYPTPROTECT_UI_FORBIDDEN, &out)) return QString();
+	if (!CryptProtectData(&src, L"DVBridge", nullptr, nullptr, nullptr, CRYPTPROTECT_UI_FORBIDDEN, &out)) return QString();
 	const QByteArray enc(reinterpret_cast<const char *>(out.pbData), int(out.cbData));
 	LocalFree(out.pbData);
 	return QString::fromLatin1(enc.toBase64());

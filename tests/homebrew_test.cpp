@@ -3,7 +3,7 @@
 //
 // HomebrewClient + VoiceTx/VoiceRx 시험
 //   모드 local : 가짜 마스터(127.0.0.1)와 로그인 → 음성 2초 송신 → 에코 수신 → 해제, 틀린 비밀번호 → 재시도 간격 증가
-//   모드 login : 실제 마스터에 **로그인만** (음성 송신 없음) 후 5초 유지하고 RPTCL. 비밀번호는 환경변수 DMRB_PW
+//   모드 login : 실제 마스터에 **로그인만** (음성 송신 없음) 후 5초 유지하고 RPTCL. 비밀번호는 환경변수 DVB_PW
 // 사용: homebrew_test local <포트>
 //       homebrew_test login <호스트> <포트> <핫스팟ID> <콜사인>
 #include <cstdio>
@@ -44,8 +44,8 @@ int main(int argc, char **argv)
 		if (argc < 6) { std::printf("usage: homebrew_test login <host> <port> <id> <callsign>\n"); return 2; }
 		HomebrewConfig c;
 		c.host = argv[2]; c.port = quint16(QString(argv[3]).toUInt()); c.id = QString(argv[4]).toUInt(); c.callsign = argv[5];
-		c.password = qEnvironmentVariable("DMRB_PW");
-		if (c.password.isEmpty()) { std::printf("DMRB_PW 환경변수에 비밀번호\n"); return 2; }
+		c.password = qEnvironmentVariable("DVB_PW");
+		if (c.password.isEmpty()) { std::printf("DVB_PW 환경변수에 비밀번호\n"); return 2; }
 		HomebrewClient h;
 		QObject::connect(&h, &HomebrewClient::log, [](QString s) { std::printf("  log: %s\n", s.toUtf8().constData()); });
 		std::printf("실제 마스터 로그인 시험 (음성 송신 없음)\n");

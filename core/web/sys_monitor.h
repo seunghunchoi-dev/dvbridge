@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)
 //
-// SysMonitor — 서버 부하: DMRBridge 프로세스·PC 전체 CPU 사용률, 메모리, 가동 시간
+// SysMonitor — 서버 부하: DVBridge 프로세스·PC 전체 CPU 사용률, 메모리, 가동 시간
 //   sample()을 주기적으로(예: 1초) 불러 CPU 사용률을 직전 표본과의 차이로 계산
 #pragma once
 #include <QElapsedTimer>

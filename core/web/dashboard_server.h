@@ -16,7 +16,7 @@
 //     GET  /api/admin/config      설정 (핫스팟 비밀번호는 내보내지 않음)
 //     GET  /api/admin/backup      설정 백업 파일 내려받기 (비밀번호는 이 PC·Windows 계정에서만 풀리는 암호문)
 //     POST /api/admin/action      {action: save_user|delete_user|start_all|stop_all|download_ids|restore|change_password, ...}
-//   보안: 세션 쿠키(HttpOnly, SameSite=Strict, 12시간), 모든 POST는 X-DMRBridge 머리 필수(다른 사이트의 요청 위조 차단),
+//   보안: 세션 쿠키(HttpOnly, SameSite=Strict, 12시간), 모든 POST는 X-DVBridge 머리 필수(다른 사이트의 요청 위조 차단),
 //         요청 본문 64KB 제한. HTTPS가 아니므로 비밀번호 입력은 이 PC나 믿을 수 있는 네트워크에서.
 #pragma once
 #include <QHash>
@@ -66,7 +66,7 @@ private slots:
 private:
 	struct Request {
 		QByteArray method, path, query, body, cookie;
-		bool csrf_ok = false;		// X-DMRBridge 머리 있음
+		bool csrf_ok = false;		// X-DVBridge 머리 있음
 		bool local = false;			// 127.0.0.1에서 옴
 		QString peer;
 	};

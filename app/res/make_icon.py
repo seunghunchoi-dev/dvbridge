@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR)
-# DMRBridge 아이콘 생성 (직접 그림 — 외부 그림·글꼴 사용 안 함)
-#   사용: python -I make_icon.py <출력 폴더>  →  dmrbridge.ico (16~256), dmrbridge.png (256), favicon32.png
+# DVBridge 아이콘 생성 (직접 그림 — 외부 그림·글꼴 사용 안 함)
+#   사용: python -I make_icon.py <출력 폴더>  →  dvbridge.ico (16~256), dvbridge.png (256), favicon32.png
 #   디자인: 빨강 그라데이션 둥근 사각형 + 흰 안테나 탑 + 양쪽 전파 (16·24px는 굵은 단순형)
 import os, sys
 from PIL import Image, ImageDraw
@@ -56,7 +56,7 @@ def draw(detail):
 big, small = draw(True), draw(False)
 sizes = [16, 24, 32, 48, 64, 128, 256]
 frames = [(small if s <= 24 else big).resize((s, s), Image.LANCZOS) for s in sizes]
-frames[-1].save(os.path.join(out, 'dmrbridge.ico'), format='ICO', sizes=[(s, s) for s in sizes], append_images=frames[:-1])
-frames[-1].save(os.path.join(out, 'dmrbridge.png'))
+frames[-1].save(os.path.join(out, 'dvbridge.ico'), format='ICO', sizes=[(s, s) for s in sizes], append_images=frames[:-1])
+frames[-1].save(os.path.join(out, 'dvbridge.png'))
 frames[2].save(os.path.join(out, 'favicon32.png'))
 print('ok', out)
