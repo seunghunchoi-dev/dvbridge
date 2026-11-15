@@ -33,10 +33,10 @@ BrandMeister 등 DMR 마스터(Homebrew 방식)에 접속해 휴대폰 앱과 �
 DVBridge 서버에 붙어 DMR 무전을 듣고 말하는 전용 클라이언트도 함께 만들었습니다. 같은 MIT 라이선스입니다.
 DVSwitch Mobile 대신 쓰거나 함께 쓸 수 있습니다.
 
-| 클라이언트 | 저장소 | 받을 파일 |
+| 클라이언트 | 저장소 | 내려받기 |
 |---|---|---|
-| **안드로이드판** | [dvbridge-client-android](https://github.com/seunghunchoi-dev/dvbridge-client-android) | [Releases](https://github.com/seunghunchoi-dev/dvbridge-client-android/releases)의 `DVBridgeClient-0.5.apk` |
-| **PC판** (Windows) | [dvbridge-client-pc](https://github.com/seunghunchoi-dev/dvbridge-client-pc) | [Releases](https://github.com/seunghunchoi-dev/dvbridge-client-pc/releases)의 `DVBridgeClient-0.5-setup.exe` |
+| **안드로이드판** | [dvbridge-client-android](https://github.com/seunghunchoi-dev/dvbridge-client-android) | [최신 릴리스](https://github.com/seunghunchoi-dev/dvbridge-client-android/releases/latest)의 APK |
+| **PC판** (Windows) | [dvbridge-client-pc](https://github.com/seunghunchoi-dev/dvbridge-client-pc) | [최신 릴리스](https://github.com/seunghunchoi-dev/dvbridge-client-pc/releases/latest)의 설치 파일 |
 
 클라이언트 사용법은 각 저장소의 Wiki와 설명서 PDF를 보세요.
 
