@@ -53,7 +53,12 @@ void UsrpPort::on_ready_read()
 			type = qbswap(type);
 			if (!type_le_) { type_le_ = true; emit log("USRP: type 리틀엔디안 클라이언트(DVSwitch Mobile 방식) → 같은 순서로 응답"); }
 		}
-		if (type != T_VOICE && type <= 0xFF) type_known_ = true;	// 음성(type 0)은 어느 순서로 읽어도 같아 구분 못 함
+		if (type != T_VOICE && type <= 0xFF && !type_known_) {	// 음성(type 0)은 어느 순서로 읽어도 같아 구분 못 함
+			type_known_ = true;
+			// DVBridge 클라이언트(빅엔디안)가 등록 없이 바로 PING 등을 보냄 = 서버가 잠깐 다시 켜진 사이 붙어 있던 것
+			//   → 지금 채널·내부 채널·에코 번호(INFO)를 먼저 보내 줌. 리틀엔디안(DVSwitch Mobile 등)은 그대로
+			if (!type_le_) emit info_requested();
+		}
 		if (type == T_VOICE) {
 			if (keyup && d.size() >= 32 + kSamples * 2) {
 				if (!ptt_ && !tot_latched_) set_ptt(true, "클라이언트 PTT");
