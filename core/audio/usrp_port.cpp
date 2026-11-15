@@ -111,7 +111,7 @@ void UsrpPort::handle_control(quint32 type, const QByteArray &pl)
 			return;
 		}
 		const QByteArray t = c_str(pl);
-		emit log("USRP: TEXT " + QString::fromLatin1(t));
+		emit log("USRP: TEXT " + QString::fromUtf8(t));	// 클라이언트 이름 등 한글이 깨지지 않게
 		if (t.startsWith("CLIENT:{")) {
 			const QJsonObject o = QJsonDocument::fromJson(QString::fromUtf8(c_str(pl)).mid(7).toUtf8()).object();
 			if (!o.isEmpty()) emit client_info(o);

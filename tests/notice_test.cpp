@@ -180,6 +180,8 @@ int main(int argc, char **argv)
 	c.s.bind(QHostAddress::LocalHost, 0);
 	c.srv = cfg.usrp_port;
 	c.hello();
+	CHECK(wait_until([&] { c.drain(); return !c.infos.isEmpty(); }, 2000) && c.infos.last().contains("\"echo_tg\":9999"),
+		  "등록 없이 PING만 보낸 DVBridge 클라이언트(빅엔디안)에도 INFO(지금 채널·에코 번호)를 먼저 보냄 (서버 재시작 뒤)");
 	pump(200);
 
 	// 자체 클라이언트 (type 빅엔디안)
