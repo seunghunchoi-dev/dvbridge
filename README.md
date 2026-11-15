@@ -49,7 +49,7 @@ DVBridge 전용 클라이언트 말고도 아래 USRP 클라이언트로 접속�
 | 클라이언트 | 비고 |
 |---|---|
 | DVSwitch Mobile (안드로이드) | 한글 이름표 표시 |
-| DS5QDR님 USRP Client (pyUC 기반, Windows·라즈베리파이) | 채널·모드 정보 표시. 이 클라이언트에는 글자를 영문(ASCII)으로만 보냅니다 (예: 공지 → "BRIDGE NOTICE"). DMR만 지원합니다 |
+| pyUC 기반 USRP 클라이언트 (DVSwitch USRP Client 계열) | 채널·모드 정보 표시. 이 클라이언트에는 글자를 영문(ASCII)으로만 보냅니다 (예: 공지 → "BRIDGE NOTICE"). DMR만 지원합니다 |
 
 이 호환 기능은 각 클라이언트가 주고받는 패킷의 동작만 검토해 DVBridge 쪽에서 직접 작성한 것입니다.
 해당 프로그램들의 소스 코드는 전혀 사용하지 않았습니다.
