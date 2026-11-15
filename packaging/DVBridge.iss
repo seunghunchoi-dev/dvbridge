@@ -20,9 +20,11 @@ AppPublisher=최승훈 (6K2KZR)
 AppCopyright=Copyright (c) 2026 최승훈 (Choi Seunghun, 6K2KZR), MIT License
 VersionInfoVersion={#AppVer}.0.0
 VersionInfoDescription=DVBridge 설치
-DefaultDirName={autopf}\DVBridge
+DefaultDirName={code:InstallDir}
 DefaultGroupName=DVBridge
-UsePreviousAppDir=yes
+; 예전 이름(DMRBridge) 폴더에 설치돼 있으면 같은 곳의 DVBridge 폴더로 옮김 (설정·보코더·음성 팩도 함께). 그 밖에는 예전 위치 그대로
+UsePreviousAppDir=no
+DisableDirPage=auto
 UsePreviousGroup=no
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
@@ -95,6 +97,77 @@ Filename: "{app}\DVBridge.exe"; Description: "DVBridge 실행"; Flags: nowait po
 //   조용히 설치할 때는 /VOCODER="파일 경로" 로 지정 가능
 var
   VocPage: TInputFileWizardPage;
+  PrevDir: String;	// 설치 시작할 때의 예전 설치 위치 (설치 중에 레지스트리가 새 위치로 바뀌므로 미리 기억)
+
+// ---- 설치 위치: 예전 이름(DMRBridge) 폴더 → DVBridge 폴더 ----
+function OldInstallDir: String;
+var
+  S: String;
+begin
+  Result := '';
+  if RegQueryStringValue(HKLM64, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{60F6E84D-4A51-49A4-984B-6F3E4974D7BA}_is1', 'InstallLocation', S) and (S <> '') then
+    Result := RemoveBackslashUnlessRoot(S);
+end;
+
+function InstallDir(Param: String): String;
+var
+  Old: String;
+begin
+  Old := OldInstallDir;
+  if Old = '' then
+    Result := ExpandConstant('{autopf}\DVBridge')
+  else if CompareText(ExtractFileName(Old), 'DMRBridge') = 0 then
+    Result := AddBackslash(ExtractFileDir(Old)) + 'DVBridge'
+  else
+    Result := Old;
+end;
+
+// 예전 폴더의 data(설정)·plugins(보코더)·voice(음성 팩)를 새 폴더로 복사하고 예전 폴더를 지움
+procedure MoveOldDir;
+var
+  Old, New, Sub: String;
+  I, RC: Integer;
+  Ok: Boolean;
+begin
+  Old := PrevDir;
+  New := ExpandConstant('{app}');
+  // 예전 위치를 모르면(또는 이미 새 위치면) 바로 옆의 예전 이름 폴더를 찾아봄
+  if ((Old = '') or (CompareText(Old, New) = 0)) and DirExists(AddBackslash(ExtractFileDir(New)) + 'DMRBridge\data') then
+    Old := AddBackslash(ExtractFileDir(New)) + 'DMRBridge';
+  if (Old = '') or (CompareText(Old, New) = 0) or not DirExists(Old) then Exit;
+  Log('moving old install: ' + Old + ' -> ' + New);
+  Ok := True;
+  for I := 0 to 2 do
+  begin
+    case I of
+      0: Sub := 'data';
+      1: Sub := 'plugins';
+    else
+      Sub := 'voice';
+    end;
+    if DirExists(Old + '\' + Sub) then
+    begin
+      // 새 폴더에 없는 파일만 복사 (/XC /XN /XO)
+      Exec(ExpandConstant('{sys}\robocopy.exe'), '"' + Old + '\' + Sub + '" "' + New + '\' + Sub + '" /E /XC /XN /XO /R:1 /W:1 /NFL /NDL /NJH /NJS /NP',
+           '', SW_HIDE, ewWaitUntilTerminated, RC);
+      Log('move ' + Sub + ': robocopy ' + IntToStr(RC));
+      if RC >= 8 then Ok := False;
+    end;
+  end;
+  if Ok then
+  begin
+    if DelTree(Old, True, True, True) then Log('old folder removed: ' + Old)
+    else Log('old folder not fully removed: ' + Old);
+  end
+  else
+    Log('old folder kept (copy failed): ' + Old);
+end;
+
+function InitializeSetup: Boolean;
+begin
+  PrevDir := OldInstallDir;
+  Result := True;
+end;
 
 procedure InitializeWizard;
 begin
@@ -172,6 +245,12 @@ begin
     RegWriteStringValue(HKCU, Key, 'DVBridge', '"' + ExpandConstant('{app}\DVBridge.exe') + '" --tray');
     RegDeleteValue(HKCU, Key, 'DMRBridge');
     Log('autostart moved to DVBridge');
+  end
+  else if RegValueExists(HKCU, Key, 'DVBridge') then
+  begin
+    // 설치 폴더가 바뀌었으면 새 위치로
+    RegWriteStringValue(HKCU, Key, 'DVBridge', '"' + ExpandConstant('{app}\DVBridge.exe') + '" --tray');
+    Log('autostart path updated');
   end;
 end;
 
@@ -179,6 +258,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
+    MoveOldDir;
     InstallVocoder;
     MoveAutostart;
     // 예전 이름 시절 음성 팩의 도우미 이름을 새 이름으로 (같은 프로그램, 이름만 바뀜)
@@ -192,16 +272,23 @@ end;
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
+  Old: String;
 begin
   if FileExists(ExpandConstant('{app}\DVBridge.exe')) and CheckForMutexes('DVBridgeRunning') then
   begin
     Exec(ExpandConstant('{app}\DVBridge.exe'), '--quit', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Sleep(1500);
   end;
-  // 예전 이름(DMRBridge) 버전이 실행 중이면 그 버전에 종료 요청
-  if FileExists(ExpandConstant('{app}\DMRBridge.exe')) and CheckForMutexes('DMRBridgeRunning') then
+  // 예전 폴더(설치 위치가 바뀌는 경우)에서 실행 중인 DVBridge·예전 이름 DMRBridge에도 종료 요청
+  Old := OldInstallDir;
+  if (Old <> '') and FileExists(Old + '\DVBridge.exe') and CheckForMutexes('DVBridgeRunning') then
   begin
-    Exec(ExpandConstant('{app}\DMRBridge.exe'), '--quit', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(Old + '\DVBridge.exe', '--quit', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(1500);
+  end;
+  if (Old <> '') and FileExists(Old + '\DMRBridge.exe') and CheckForMutexes('DMRBridgeRunning') then
+  begin
+    Exec(Old + '\DMRBridge.exe', '--quit', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Sleep(1500);
   end;
   Result := '';
